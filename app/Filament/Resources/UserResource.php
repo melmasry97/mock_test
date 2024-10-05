@@ -2,16 +2,21 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\UserResource\Pages;
-use App\Filament\Resources\UserResource\RelationManagers;
-use App\Models\User;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Models\User;
 use Filament\Tables;
+use Filament\Forms\Form;
 use Filament\Tables\Table;
+use Filament\Resources\Resource;
+use Spatie\Permission\Models\Role;
+use Filament\Forms\Components\Select;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Forms\Components\TextInput;
+use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Tables\Columns\TagsColumn;
+use App\Filament\Resources\UserResource\Pages;
+use App\Filament\Resources\UserResource\RelationManagers\RolesRelationManager;
 
 class UserResource extends Resource
 {
@@ -23,7 +28,23 @@ class UserResource extends Resource
     {
         return $form
             ->schema([
-                //
+                TextInput::make('name')
+                    ->required()
+                    ->maxLength(255),
+                TextInput::make('email')
+                    ->email()
+                    ->required()
+                    ->maxLength(255),
+                TextInput::make('password')
+                    ->password()
+                    ->required()
+                    ->hiddenOn('edit')
+                    ->maxLength(255),
+                Select::make('roles')
+                    ->multiple()
+                    ->relationship('roles', 'name')
+                    ->preload()
+                    ->searchable(),
             ]);
     }
 
@@ -31,10 +52,22 @@ class UserResource extends Resource
     {
         return $table
             ->columns([
-                //
+                TextColumn::make('name')
+                    ->searchable(),
+                TextColumn::make('email')
+                    ->searchable(),
+                TagsColumn::make('roles.name')
+                    ->label('Roles')
+                    ->searchable(),
+                TextColumn::make('created_at')
+                    ->dateTime('F j, Y')
+                    ->sortable(),
             ])
             ->filters([
-                //
+                SelectFilter::make('roles')
+                    ->relationship('roles', 'name')
+                    ->multiple()
+                    ->preload(),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
@@ -50,7 +83,7 @@ class UserResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RolesRelationManager::class,
         ];
     }
 
