@@ -37,24 +37,23 @@ class CategoryElementsRelationManager extends RelationManager
                     ->maxLength(65535),
                 Checkbox::make('negative')
                     ->label('Sign'),
-                Checkbox::make('negative')
-                ->label('Negativity')
-                ->default(function (RelationManager $livewire, $state) {
-                    // Get the current record being edited
-                    $record = $livewire->getOwnerRecord()->categoryElements()->where('category_element_id', $livewire->getRecord()->id)->first();
-                    return $record ? $record->pivot->value : false;
-                })
-                ->visible(fn (callable $get) => $get('type') === 'boolean'),
+                // Conditional rendering based on type
                 Forms\Components\TextInput::make('value')
-                ->label('value')
-                ->default(function (RelationManager $livewire, $state) {
-                    // Get the current record being edited
-                    $record = $livewire->getOwnerRecord()->categoryElements()->where('category_element_id', $livewire->getRecord()->id)->first();
-                    return $record ? $record->pivot->value : null;
-                })
-                ->nullable()
-                ->visible(fn (callable $get) => in_array($get('type'), ['number', 'percentage', 'text']))
-                ->numeric(fn (callable $get) => in_array($get('type'), ['number', 'percentage'])),
+                    ->label('Value')
+                    ->default(function (RelationManager $livewire) {
+                        $record = $livewire->getOwnerRecord()->categoryElements()->where('category_element_id', $livewire->getRecord()->id)->first();
+                        return $record ? $record->pivot->value : null;
+                    })
+                    ->nullable()
+                    ->visible(fn (callable $get) => in_array($get('type'), ['number', 'percentage', 'text']))
+                    ->numeric(fn (callable $get) => in_array($get('type'), ['number', 'percentage'])),
+                Checkbox::make('boolean_value')
+                    ->label('Value')
+                    ->default(function (RelationManager $livewire) {
+                        $record = $livewire->getOwnerRecord()->categoryElements()->where('category_element_id', $livewire->getRecord()->id)->first();
+                        return $record ? (bool)$record->pivot->value : false;
+                    })
+                    ->visible(fn (callable $get) => $get('type') === 'boolean'),
             ]);
     }
 
@@ -115,27 +114,28 @@ class CategoryElementsRelationManager extends RelationManager
                             Forms\Components\Textarea::make('description')
                                 ->maxLength(65535),
                             Checkbox::make('negative')
-                                ->label('negativity'),
+                                ->label('Negativity'),
+                            // Conditional rendering based on type
                             Forms\Components\TextInput::make('value')
-                                ->label('value')
-                                ->default($record->pivot->value)
+                                ->label('Value')
+                                ->default($record->pivot->value) // Ensure correct default value
                                 ->nullable()
                                 ->visible(fn (callable $get) => in_array($get('type'), ['number', 'percentage', 'text']))
                                 ->numeric(fn (callable $get) => in_array($get('type'), ['number', 'percentage'])),
-                            Checkbox::make('value')
-                                ->label('value')
-                                ->default($record->value)
-                                ->visible(fn (callable $get) => $get('type') === 'boolean'),
+                            Checkbox::make('boolean_value')
+                                ->label('Value')
+                                ->default((bool)$record->pivot_value == '1' || $record->pivot_value == true)
+                                ->visible(fn (callable $get) => $get('type') === 'boolean'),                            
                         ]);
                     })
                     ->mutateFormDataUsing(function (array $data): array {
                         // Convert boolean values to actual booleans
                         if ($data['type'] === 'boolean') {
-                            $data['value'] = $data['value'] === '1' || $data['value'] === true;
-                        }elseif($data['type'] === 'number'){
+                            $data['value'] = $data['boolean_value'] === '1' || $data['boolean_value'] === true;
+                        } elseif ($data['type'] === 'number') {
                             $data['value'] = floatval($data['value']);
-                        }else{
-                            $data['value'] = floatval($data['value']);
+                        } else {
+                            $data['value'] = $data['value'];
                         }
 
                         return $data;
