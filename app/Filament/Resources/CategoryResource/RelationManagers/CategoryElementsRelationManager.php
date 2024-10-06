@@ -40,19 +40,19 @@ class CategoryElementsRelationManager extends RelationManager
                 // Conditional rendering based on type
                 Forms\Components\TextInput::make('value')
                     ->label('Value')
-                    ->default(function (RelationManager $livewire) {
-                        $record = $livewire->getOwnerRecord()->categoryElements()->where('category_element_id', $livewire->getRecord()->id)->first();
-                        return $record ? $record->pivot->value : null;
-                    })
+                    // ->default(function (RelationManager $livewire) {
+                    //     $record = $livewire->getOwnerRecord()->categoryElements()->where('category_element_id', $livewire?->getRecord()->id)->first();
+                    //     return $record ? $record->pivot->value : null;
+                    // })
                     ->nullable()
                     ->visible(fn (callable $get) => in_array($get('type'), ['number', 'percentage', 'text']))
                     ->numeric(fn (callable $get) => in_array($get('type'), ['number', 'percentage'])),
                 Checkbox::make('boolean_value')
                     ->label('Value')
-                    ->default(function (RelationManager $livewire) {
-                        $record = $livewire->getOwnerRecord()->categoryElements()->where('category_element_id', $livewire->getRecord()->id)->first();
-                        return $record ? (bool)$record->pivot->value : false;
-                    })
+                    // ->default(function (RelationManager $livewire) {
+                    //     $record = $livewire->getOwnerRecord()->categoryElements()->where('category_element_id', $livewire?->getRecord()->id)->first();
+                    //     return $record ? (bool)$record->pivot->value : false;
+                    // })
                     ->visible(fn (callable $get) => $get('type') === 'boolean'),
             ]);
     }

@@ -48,11 +48,11 @@ class CategoryElementResource extends Resource
                     ->columnSpanFull(),
                 Checkbox::make('negative')
                     ->label('Negative')
-                    ->visible(fn (callable $get) => $get('type') === 'boolean'),
+                    ->visible(fn (callable $get) => (bool) $get('negative')), // Always visible when type is boolean
                 Forms\Components\TextInput::make('value')
                     ->label('Value')
                     ->numeric()
-                    ->visible(fn (callable $get) => in_array($get('type'), ['number', 'percentage'])),
+                    ->visible(fn (callable $get) => in_array($get('type'), ['number', 'percentage', 'boolean'])), // Now also visible for boolean
             ]);
     }
 
@@ -75,7 +75,7 @@ class CategoryElementResource extends Resource
                 Tables\Columns\TextColumn::make('value')
                     ->label('Value')
                     ->formatStateUsing(fn ($state, $record) => $record->type === 'percentage' ? "{$state}%" : $state)
-                    ->visible(fn ($record): bool => in_array($record->type, ['number', 'percentage', 'text'])),
+                    // ->visible(fn ($record): bool => in_array($record->type, ['number', 'percentage', 'text'])),
             ])
             ->filters([
                 //

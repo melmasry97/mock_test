@@ -46,4 +46,9 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+    
+    public function modules()
+    {
+        return $this->hasMany(ProjectModule::class);
+    }
 }
