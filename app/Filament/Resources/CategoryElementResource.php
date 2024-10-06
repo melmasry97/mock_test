@@ -24,7 +24,12 @@ class CategoryElementResource extends Resource
                 Forms\Components\Select::make('categories')
                     ->multiple()
                     ->relationship('categories', 'name')
-                    ->preload(),
+                    ->preload()
+                    ->createOptionForm([
+                        Forms\Components\TextInput::make('name')
+                            ->required()
+                            ->maxLength(255),
+                    ]),
                 Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255),
@@ -58,7 +63,7 @@ class CategoryElementResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('type')
-                    ->searchable(),
+                    ->label('Type'),
                 Tables\Columns\TextColumn::make('description')
                     ->limit(50)
                     ->searchable(),
@@ -66,12 +71,11 @@ class CategoryElementResource extends Resource
                     ->boolean()
                     ->label('Negative')
                     ->trueIcon('heroicon-o-x-circle')
-                    ->falseIcon('heroicon-o-check-circle')
-                    ->visible(fn ($record) => $record->type === 'boolean'),
+                    ->falseIcon('heroicon-o-check-circle'),
                 Tables\Columns\TextColumn::make('value')
                     ->label('Value')
                     ->formatStateUsing(fn ($state, $record) => $record->type === 'percentage' ? "{$state}%" : $state)
-                    ->visible(fn ($record) => in_array($record->type, ['number', 'percentage', 'text', 'boolean'])),
+                    ->visible(fn ($record): bool => in_array($record->type, ['number', 'percentage', 'text'])),
             ])
             ->filters([
                 //
@@ -101,5 +105,15 @@ class CategoryElementResource extends Resource
             'create' => Pages\CreateCategoryElement::route('/create'),
             'edit' => Pages\EditCategoryElement::route('/{record}/edit'),
         ];
+    }
+
+    public static function canViewAny(): bool
+    {
+        return true;
+    }
+
+    public static function canCreate(): bool
+    {
+        return true;
     }
 }
