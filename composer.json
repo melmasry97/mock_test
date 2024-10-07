@@ -10,6 +10,8 @@
         "filament/filament": "^3.2",
         "laravel/framework": "^11.9",
         "laravel/tinker": "^2.9",
+        "livewire/livewire": "^3.5",
+        "spatie/enum": "^3.13",
         "spatie/laravel-permission": "^6.9"
     },
     "require-dev": {
