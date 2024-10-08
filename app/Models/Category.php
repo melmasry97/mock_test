@@ -9,10 +9,15 @@ class Category extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'description'];
+    protected $fillable = ['name'];
 
-    public function categoryElements()
+    public function projectModules()
     {
-        return $this->belongsToMany(CategoryElement::class)->withPivot('value');
+        return $this->hasMany(ProjectModule::class);
+    }
+
+    public function isoTasks()
+    {
+        return $this->hasMany(IsoTask::class);
     }
 }

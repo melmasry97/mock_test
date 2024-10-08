@@ -126,7 +126,9 @@ class TaskResource extends Resource
                                 'matrix_values' => json_encode($data['matrixValues']),
                             ]);
 
-                            $record->metrics()->save($metric);  // Changed from metric() to metrics()
+                            // Ensure the metrics relationship is defined in the Task model
+                            $record->metrics()->save($metric);  // Ensure this relationship is valid
+                            // Check for any validation or exception handling if needed
                             $record->update(['state' => TaskState::DONE]);
 
                             Log::info('Metric saved for task: ' . $record->id);

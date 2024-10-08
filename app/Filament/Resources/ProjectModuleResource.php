@@ -4,6 +4,8 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProjectModuleResource\Pages;
 use App\Models\ProjectModule;
+use App\Models\Project;
+use App\Models\Category;
 use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -26,6 +28,16 @@ class ProjectModuleResource extends Resource
                     ->numeric()
                     ->minValue(0)
                     ->maxValue(100),
+                Forms\Components\Select::make('project_id')
+                    ->label('Project')
+                    ->options(Project::pluck('name', 'id'))
+                    ->required()
+                    ->searchable(),
+                Forms\Components\Select::make('category_id')
+                    ->label('Category')
+                    ->options(Category::pluck('name', 'id'))
+                    ->required()
+                    ->searchable(),
             ]);
     }
 

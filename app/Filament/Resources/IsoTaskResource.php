@@ -18,7 +18,7 @@ class IsoTaskResource extends Resource
 
 
     protected static ?string $navigationLabel = 'ISO';
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack'; // Set a valid icon for the panel
+    protected static ?string $navigationIcon = 'heroicon-o-document-text'; // Set a valid icon for the panel
 
 
     public static function table(Tables\Table $table): Tables\Table
@@ -80,16 +80,14 @@ class IsoTaskResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('title')
+                Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\Textarea::make('description')
+                Forms\Components\Select::make('category_id')
+                    ->label('Category')
+                    ->options(Category::pluck('name', 'id'))
                     ->required()
-                    ->maxLength(65535),
-                Forms\Components\Select::make('category_id') // Change 'category' to 'category_id'
-                    ->label('Category') // Label for the field
-                    ->options(Category::where('name', 'iso')->pluck('name', 'id')) // Fetch categories with name 'Qa'
-                    ->required(),
+                    ->searchable(),
                 Forms\Components\Select::make('state')
                     ->options(TaskState::class)
                     ->required(),
