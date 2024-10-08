@@ -10,11 +10,16 @@ return new class extends Migration
 {
     public function up()
     {
-        Task::where('state', TaskState::TODO->value)->update(['state' => TaskState::REPO->value]);
+        Task::whereNotIn('state', [
+            TaskState::REPO->value,
+            TaskState::TODO->value,
+            TaskState::IN_PROGRESS->value,
+            TaskState::DONE->value,
+        ])->update(['state' => TaskState::TODO->value]);
     }
 
     public function down()
     {
-        Task::where('state', TaskState::REPO->value)->update(['state' => TaskState::TODO->value]);
+        // This migration is not reversible
     }
 };

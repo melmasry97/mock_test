@@ -9,15 +9,10 @@ class ProjectModule extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'weight', 'project_id', 'category_id'];
+    protected $fillable = ['name', 'weight'];
 
-    public function project()
+    public function tasks()
     {
-        return $this->belongsTo(Project::class);
-    }
-
-    public function category()
-    {
-        return $this->belongsTo(Category::class);
+        return $this->hasMany(Task::class);
     }
 }

@@ -11,30 +11,24 @@ class Task extends Model
     use HasFactory;
 
     protected $fillable = [
-        'title',
+        'name',
         'description',
         'state',
-        // Add other existing fields
+        'weight',
+        'project_module_id',
     ];
 
     protected $casts = [
         'state' => TaskState::class,
-        'weight' => 'float',
-        'iso_weight' => 'float',
     ];
-
-    public function projectModule()
-    {
-        return $this->belongsTo(ProjectModule::class);
-    }
-
-    public function getStateDescription()
-    {
-        return $this->state->label();
-    }
 
     public function metric()
     {
         return $this->hasOne(Metric::class);
+    }
+
+    public function projectModule()
+    {
+        return $this->belongsTo(ProjectModule::class);
     }
 }

@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
+use Filament\Facades\Filament;
+use App\Filament\Components\MetricsModal;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,5 +23,10 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Schema::defaultStringLength(125); // Set default string length to 125
+
+        Filament::registerRenderHook(
+            'body.end',
+            fn (): string => Blade::render('@livewire(\'metrics-modal\')'),
+        );
     }
 }

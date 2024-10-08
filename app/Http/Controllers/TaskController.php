@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Task;
+use App\Enums\TaskState;
 use Illuminate\Http\Request;
 
 class TaskController extends Controller
@@ -11,7 +12,7 @@ class TaskController extends Controller
 
     public function edit(Task $task)
     {
-        if ($task->state === TaskState::REPO) {
+        if ($task->state === TaskState::TODO) {
             $task->update(['state' => TaskState::IN_PROGRESS]);
         }
 

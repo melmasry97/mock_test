@@ -5,18 +5,16 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\ProjectModuleResource\Pages;
 use App\Models\ProjectModule;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Table;
 
 class ProjectModuleResource extends Resource
 {
     protected static ?string $model = ProjectModule::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack'; // Changed this line
 
-    public static function form(Form $form): Form
+    public static function form(Forms\Form $form): Forms\Form
     {
         return $form
             ->schema([
@@ -25,52 +23,18 @@ class ProjectModuleResource extends Resource
                     ->maxLength(255),
                 Forms\Components\TextInput::make('weight')
                     ->required()
-                    ->numeric(),
-                Forms\Components\Select::make('category_id')
-                    ->relationship('category', 'name')
-                    ->required(),
-                Forms\Components\Select::make('project_id')
-                    ->relationship('project', 'name')
-                    ->required(),
-                Forms\Components\Select::make('user_id')
-                    ->relationship('user', 'name')
-                    ->nullable(),
-                Forms\Components\Textarea::make('score')
-                    ->json()
-                    ->nullable(),
-                Forms\Components\DateTimePicker::make('end_time')
-                    ->nullable(),
+                    ->numeric()
+                    ->minValue(0)
+                    ->maxValue(100),
             ]);
     }
 
-    public static function table(Table $table): Table
+    public static function table(Tables\Table $table): Tables\Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('weight')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('category.name')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('project.name')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('user.name')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('score')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('end_time')
-                    ->dateTime()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('name'),
+                Tables\Columns\TextColumn::make('weight'),
             ])
             ->filters([
                 //
@@ -79,9 +43,7 @@ class ProjectModuleResource extends Resource
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                Tables\Actions\DeleteBulkAction::make(),
             ]);
     }
 
