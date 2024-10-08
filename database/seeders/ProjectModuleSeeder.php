@@ -2,40 +2,26 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\ProjectModule;
 use App\Models\Project;
-use Faker\Factory as FakerFactory;
+use App\Models\Category;
+use Illuminate\Database\Seeder;
 
 class ProjectModuleSeeder extends Seeder
 {
     public function run()
     {
-        $faker = FakerFactory::create();
         $projects = Project::all();
+        $categories = Category::all();
 
         foreach ($projects as $project) {
-            $remainingWeight = 100;
-            $modulesToCreate = 3;
-
-            for ($i = 0; $i < $modulesToCreate; $i++) {
-                if ($i == $modulesToCreate - 1) {
-                    $weight = $remainingWeight;
-                } else {
-                    $maxWeight = $remainingWeight - ($modulesToCreate - $i - 1);
-                    $weight = $faker->randomFloat(2, 1, max(1, $maxWeight));
-                }
-
+            foreach ($categories as $category) {
                 ProjectModule::create([
-                    'name' => $faker->words(3, true),
-                    'weight' => $weight,
+                    'name' => fake()->words(3, true),
+                    'weight' => fake()->numberBetween(1, 5),
                     'project_id' => $project->id,
-                    'category_id' => $project->category_id,
-                    'created_at' => $faker->dateTimeBetween('-1 year', 'now'),
-                    'updated_at' => $faker->dateTimeBetween('-1 year', 'now'),
+                    'category_id' => $category->id,
                 ]);
-
-                $remainingWeight -= $weight;
             }
         }
     }

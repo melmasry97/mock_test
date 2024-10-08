@@ -114,11 +114,9 @@ class TaskResource extends Resource
                         DB::transaction(function () use ($record, $data) {
                             $calculatedValue = ($data['input1'] * $data['input2'] * $data['input3']) / $data['input4'];
 
-                            Log::info('Creating metric for task: ' . $record->id);
-                            Log::info('Data: ' . json_encode($data));
-
                             $metric = new Metric([
                                 'task_id' => $record->id,
+                                'user_id' => auth()->id(), // Add the authenticated user's ID
                                 'module_weight' => $record->projectModule->weight,
                                 'input1' => $data['input1'],
                                 'input2' => $data['input2'],
@@ -128,15 +126,10 @@ class TaskResource extends Resource
                                 'matrix_values' => json_encode($data['matrixValues']),
                             ]);
 
-                            $saved = $metric->save();
-                            Log::info('Metric saved: ' . ($saved ? 'Yes' : 'No'));
-
-                            if (!$saved) {
-                                Log::error('Failed to save metric. Errors: ' . json_encode($metric->getErrors()));
-                            }
-
+                            $record->metrics()->save($metric);  // Changed from metric() to metrics()
                             $record->update(['state' => TaskState::DONE]);
-                            Log::info('Task updated to DONE state');
+
+                            Log::info('Metric saved for task: ' . $record->id);
                         });
 
                         Notification::make()

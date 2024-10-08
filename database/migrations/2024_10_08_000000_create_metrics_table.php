@@ -11,12 +11,13 @@ return new class extends Migration
         Schema::create('metrics', function (Blueprint $table) {
             $table->id();
             $table->foreignId('task_id')->constrained()->onDelete('cascade');
-            $table->integer('module_weight');
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->float('module_weight');
             $table->integer('input1');
             $table->integer('input2');
             $table->integer('input3');
             $table->integer('input4');
-            $table->integer('calculated_value');
+            $table->float('calculated_value');
             $table->json('matrix_values');
             $table->timestamps();
         });

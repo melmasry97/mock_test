@@ -9,7 +9,17 @@ class Metric extends Model
 {
     use HasFactory;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'task_id',
+        'user_id',
+        'module_weight',
+        'input1',
+        'input2',
+        'input3',
+        'input4',
+        'calculated_value',
+        'matrix_values',
+    ];
 
     protected $casts = [
         'matrix_values' => 'array',
@@ -18,5 +28,10 @@ class Metric extends Model
     public function task()
     {
         return $this->belongsTo(Task::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }

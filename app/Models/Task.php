@@ -22,9 +22,9 @@ class Task extends Model
         'state' => TaskState::class,
     ];
 
-    public function metric()
+    public function metrics()
     {
-        return $this->hasOne(Metric::class);
+        return $this->hasMany(Metric::class);
     }
 
     public function projectModule()
