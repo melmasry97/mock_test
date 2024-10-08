@@ -12,11 +12,11 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             CategorySeeder::class,
             CategoryElementSeeder::class,
+            AdminUserSeeder::class,
             ProjectSeeder::class,
             ProjectModuleSeeder::class,
             IsoTaskSeeder::class,
             TaskSeeder::class,
-            AdminUserSeeder::class,
         ]);
     }
 }
