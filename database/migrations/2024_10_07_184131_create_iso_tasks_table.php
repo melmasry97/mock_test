@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->float('weight'); // Weight for the ISO task
             $table->foreignId('category_id')->constrained('categories', 'id', 'category_id');
-            $table->string('description')->nullable();
+            $table->text('description')->nullable(); // Changed from string to text
             $table->timestamps();
         });
     }

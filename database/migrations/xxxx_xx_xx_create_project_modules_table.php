@@ -12,11 +12,8 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->float('weight');
-            $table->foreignId('category_id')->constrained()->onDelete('cascade');
             $table->foreignId('project_id')->constrained()->onDelete('cascade');
-            $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
-            $table->json('score')->nullable();
-            $table->dateTime('end_time')->nullable();
+            $table->foreignId('category_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });
     }

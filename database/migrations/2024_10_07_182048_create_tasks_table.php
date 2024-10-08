@@ -15,8 +15,10 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->text('description')->nullable();
-            $table->string('state')->default('todo');
             $table->decimal('weight', 5, 2)->default(0);
+            $table->float('iso_weight')->nullable();
+            $table->unsignedBigInteger('project_module_id')->nullable();
+            $table->foreign('project_module_id')->references('id')->on('project_modules')->onDelete('set null');
             $table->timestamps();
         });
     }

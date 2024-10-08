@@ -9,25 +9,15 @@ class ProjectModule extends Model
 {
     use HasFactory;
 
-    protected $guarded = [];
-
-    protected $casts = [
-        'score' => 'json',
-        'end_time' => 'datetime',
-    ];
-
-    public function category()
-    {
-        return $this->belongsTo(Category::class);
-    }
+    protected $fillable = ['name', 'weight', 'project_id', 'category_id'];
 
     public function project()
     {
         return $this->belongsTo(Project::class);
     }
 
-    public function user()
+    public function category()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Category::class);
     }
 }

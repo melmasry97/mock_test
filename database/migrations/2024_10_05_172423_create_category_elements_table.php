@@ -17,6 +17,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->enum('type', ['percentage', 'number', 'text', 'boolean'])->default('text');
             $table->boolean('negative')->default(false);
+            $table->foreignId('category_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });
     }

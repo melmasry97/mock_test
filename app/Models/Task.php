@@ -10,37 +10,21 @@ class Task extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'title',
-        'description',
-        'state',
-        'weight',
-        // Add any other fields that should be mass-assignable
-    ];
+    protected $fillable = ['name', 'description', 'weight', 'iso_weight', 'project_module_id', 'state'];
 
     protected $casts = [
         'state' => TaskState::class,
+        'weight' => 'float',
+        'iso_weight' => 'float',
     ];
 
-    protected $guarded = [];
-
-    public function project()
+    public function projectModule()
     {
-        return $this->belongsTo(Project::class);
-    }
-
-    public function category()
-    {
-        return $this->belongsTo(Category::class);
-    }
-
-    public function isoTask()
-    {
-        return $this->belongsTo(IsoTask::class);
+        return $this->belongsTo(ProjectModule::class);
     }
 
     public function getStateDescription()
     {
-        return TaskState::fromValue($this->state)->label();
+        return $this->state->label();
     }
 }

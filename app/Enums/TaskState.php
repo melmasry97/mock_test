@@ -2,31 +2,18 @@
 
 namespace App\Enums;
 
-use Spatie\Enum\Enum;
-
-final class TaskState extends Enum
+enum TaskState: string
 {
-    protected static function values(): array
+    case TODO = 'todo';
+    case IN_PROGRESS = 'in_progress';
+    case DONE = 'done';
+
+    public static function getLabels(): array
     {
         return [
-            'repo' => 'repo',
-            'in_progress' => 'in_progress',
-            'done' => 'done',
+            self::TODO->value => 'To Do',
+            self::IN_PROGRESS->value => 'In Progress',
+            self::DONE->value => 'Done',
         ];
-    }
-
-    protected static function labels(): array
-    {
-        return [
-            'repo' => 'Repository',
-            'in_progress' => 'In Progress',
-            'done' => 'Done',
-        ];
-    }
-
-    // Custom method to get all values
-    public static function getAllValues(): array
-    {
-        return array_column(self::toArray(), 'value');
     }
 }

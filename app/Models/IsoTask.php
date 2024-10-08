@@ -2,23 +2,17 @@
 
 namespace App\Models;
 
-use App\Enums\TaskState;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class IsoTask extends Model
 {
     use HasFactory;
 
-    protected $guarded = [];
+    protected $fillable = ['name', 'weight', 'category_id', 'description'];
 
     public function category()
     {
         return $this->belongsTo(Category::class);
-    }
-
-    public function getStateDescription()
-    {
-        return TaskState::fromValue($this->state)->label();
     }
 }

@@ -21,19 +21,15 @@ class TaskResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('title') // Changed from 'name' to 'title'
+                Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255),
                 Forms\Components\Textarea::make('description')
                     ->maxLength(65535),
                 Forms\Components\Select::make('state')
                     ->options(TaskState::class)
-                    ->required()
-                    ->formatStateUsing(function ($state) {
-                        // Debugging line to log the state value
-                        \Log::info('State value: ' . $state);
-                        return TaskState::tryFrom($state)?->name ?? 'Unknown State';
-                    }),
+                    ->enum(TaskState::class)
+                    ->required(),
                 Forms\Components\TextInput::make('weight')
                     ->label('Weight (%)')
                     ->required()
@@ -41,6 +37,11 @@ class TaskResource extends Resource
                     ->default(0)
                     ->minValue(0)
                     ->maxValue(100),
+                Forms\Components\Select::make('project_module_id')
+                    ->relationship('projectModule', 'name')
+                    ->label('Project Module')
+                    ->searchable()
+                    ->preload(),
             ]);
     }
 
@@ -48,16 +49,20 @@ class TaskResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('title') // Ensure this is referencing 'title'
+                Tables\Columns\TextColumn::make('name')
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('description')
                     ->limit(50),
                 Tables\Columns\TextColumn::make('state')
+                    ->formatStateUsing(fn (TaskState $state): string => $state->name)
                     ->sortable(),
                 Tables\Columns\TextColumn::make('weight')
                     ->label('Weight (%)')
                     ->numeric()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('projectModule.name')
+                    ->label('Project Module')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
