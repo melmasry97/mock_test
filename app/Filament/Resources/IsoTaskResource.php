@@ -11,6 +11,9 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
+use Illuminate\Support\Facades\DB;
 
 class IsoTaskResource extends Resource
 {
@@ -90,12 +93,38 @@ class IsoTaskResource extends Resource
                     ->required()
                     ->searchable(),
                 Forms\Components\TextInput::make('weight')
-                    ->label('Weight (%)') // Label for the field
+                    ->label('Weight (%)')
                     ->required()
-                    ->numeric() // Ensure it's a numeric input
-                    ->default(0) // Set a default value if needed
-                    ->minValue(0) // Ensure it's within the valid range
-                    ->maxValue(100), // Ensure it's within the valid range
+                    ->numeric()
+                    ->default(0)
+                    ->minValue(0)
+                    ->maxValue(100)
+                    ->afterStateUpdated(function (Get $get, Set $set) {
+                        $currentId = $get('id');
+                        $currentWeight = $get('weight');
+
+                        $totalWeight = IsoTask::when($currentId, function ($query) use ($currentId) {
+                                $query->where('id', '!=', $currentId);
+                            })
+                            ->sum('weight') + $currentWeight;
+
+                        if ($totalWeight > 100) {
+                            $set('weight', 100 - (IsoTask::when($currentId, function ($query) use ($currentId) {
+                                $query->where('id', '!=', $currentId);
+                            })->sum('weight')));
+                        }
+                    })
+                    ->helperText(function (Get $get) {
+                        $currentId = $get('id');
+                        $currentWeight = $get('weight');
+
+                        $totalWeight = IsoTask::when($currentId, function ($query) use ($currentId) {
+                                $query->where('id', '!=', $currentId);
+                            })
+                            ->sum('weight') + $currentWeight;
+
+                        return "Total weight: {$totalWeight}% / 100%";
+                    }),
             ]);
     }
 
