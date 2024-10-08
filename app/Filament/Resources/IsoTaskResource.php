@@ -25,7 +25,7 @@ class IsoTaskResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('title')
+                Tables\Columns\TextColumn::make('name')
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('description')
@@ -33,8 +33,6 @@ class IsoTaskResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('category.name') // Show category name
                     ->label('Category'), // Label for the field
-                Tables\Columns\TextColumn::make('state')
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('weight') // Add weight column
                     ->label('Weight (%)') // Label for the field
                     ->sortable(),
@@ -52,6 +50,7 @@ class IsoTaskResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -83,14 +82,13 @@ class IsoTaskResource extends Resource
                 Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255),
+                Forms\Components\Textarea::make('description')
+                    ->maxLength(65535),
                 Forms\Components\Select::make('category_id')
                     ->label('Category')
                     ->options(Category::pluck('name', 'id'))
                     ->required()
                     ->searchable(),
-                Forms\Components\Select::make('state')
-                    ->options(TaskState::class)
-                    ->required(),
                 Forms\Components\TextInput::make('weight')
                     ->label('Weight (%)') // Label for the field
                     ->required()
@@ -99,5 +97,11 @@ class IsoTaskResource extends Resource
                     ->minValue(0) // Ensure it's within the valid range
                     ->maxValue(100), // Ensure it's within the valid range
             ]);
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery();
+        // Remove the when clause for now
     }
 }

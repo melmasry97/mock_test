@@ -19,6 +19,7 @@ return new class extends Migration
             $table->integer('input4');
             $table->float('calculated_value');
             $table->json('matrix_values');
+            $table->float('matrix_calculated_value'); // New column for matrix calculation
             $table->timestamps();
         });
     }

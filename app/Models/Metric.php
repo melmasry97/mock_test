@@ -19,6 +19,7 @@ class Metric extends Model
         'input4',
         'calculated_value',
         'matrix_values',
+        'matrix_calculated_value',
     ];
 
     protected $casts = [

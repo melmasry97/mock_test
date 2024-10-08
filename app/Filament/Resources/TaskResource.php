@@ -6,6 +6,7 @@ use Filament\Forms;
 use App\Models\Task;
 use Filament\Tables;
 use App\Models\Metric;
+use App\Models\IsoTask;
 use App\Enums\TaskState;
 use App\Models\ProjectModule;
 use Filament\Resources\Resource;
@@ -100,35 +101,42 @@ class TaskResource extends Resource
                         Forms\Components\Section::make('ISO Weight')
                             ->schema([
                                 Forms\Components\Grid::make(3)
-                                    ->schema(array_map(fn ($i) =>
-                                        Forms\Components\Select::make("matrixValues.{$i}")
-                                            ->label('Value ' . ($i + 1))
-                                            ->options([0 => 0, 1 => 1, 2 => 2, 3 => 3, 5 => 5])
-                                            ->required()
-                                            ->extraAttributes(['class' => 'text-center']),
-                                        range(0, 8)
-                                    )),
+                                    ->schema(
+                                        IsoTask::take(9)->get()->map(function ($isoTask) {
+                                            return Forms\Components\Select::make("matrix_values.{$isoTask->id}")
+                                                ->label($isoTask->name)
+                                                ->options([0 => 0, 1 => 1, 2 => 2, 3 => 3, 5 => 5])
+                                                ->required()
+                                                ->extraAttributes(['class' => 'text-center']);
+                                        })->toArray()
+                                    ),
                             ]),
                     ])
                     ->action(function (Task $record, array $data) {
                         DB::transaction(function () use ($record, $data) {
                             $calculatedValue = ($data['input1'] * $data['input2'] * $data['input3']) / $data['input4'];
 
+                            // Calculate matrix_calculated_value
+                            $matrixCalculatedValue = 0;
+                            foreach ($data['matrix_values'] as $isoTaskId => $value) {
+                                $isoTask = IsoTask::find($isoTaskId);
+                                $matrixCalculatedValue += $isoTask->weight * $value;
+                            }
+
                             $metric = new Metric([
                                 'task_id' => $record->id,
-                                'user_id' => auth()->id(), // Add the authenticated user's ID
+                                'user_id' => auth()->id(),
                                 'module_weight' => $record->projectModule->weight,
                                 'input1' => $data['input1'],
                                 'input2' => $data['input2'],
                                 'input3' => $data['input3'],
                                 'input4' => $data['input4'],
                                 'calculated_value' => $calculatedValue,
-                                'matrix_values' => json_encode($data['matrixValues']),
+                                'matrix_values' => $data['matrix_values'],
+                                'matrix_calculated_value' => $matrixCalculatedValue,
                             ]);
 
-                            // Ensure the metrics relationship is defined in the Task model
-                            $record->metrics()->save($metric);  // Ensure this relationship is valid
-                            // Check for any validation or exception handling if needed
+                            $record->metrics()->save($metric);
                             $record->update(['state' => TaskState::DONE]);
 
                             Log::info('Metric saved for task: ' . $record->id);
@@ -142,13 +150,7 @@ class TaskResource extends Resource
                     })
                     ->visible(fn (Task $record) => $record->state === TaskState::REPO || $record->state === TaskState::IN_PROGRESS)
                     ->modalHeading('Add Metrics for Task')
-                    ->modalButton('Submit')
-                    ->successNotification(
-                        Notification::make()
-                            ->success()
-                            ->title('Metrics added successfully')
-                            ->body('The metrics have been added and the task has been marked as done.')
-                    ),
+                    ->modalButton('Submit'),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),
