@@ -10,7 +10,12 @@ class Task extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'description', 'weight', 'iso_weight', 'project_module_id', 'state'];
+    protected $fillable = [
+        'title',
+        'description',
+        'state',
+        // Add other existing fields
+    ];
 
     protected $casts = [
         'state' => TaskState::class,
@@ -26,5 +31,10 @@ class Task extends Model
     public function getStateDescription()
     {
         return $this->state->label();
+    }
+
+    public function metric()
+    {
+        return $this->hasOne(Metric::class);
     }
 }
