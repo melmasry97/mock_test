@@ -120,7 +120,7 @@ class TaskResource extends Resource
                             $matrixCalculatedValue = 0;
                             foreach ($data['matrix_values'] as $isoTaskId => $value) {
                                 $isoTask = IsoTask::find($isoTaskId);
-                                $matrixCalculatedValue += $isoTask->weight * $value;
+                                $matrixCalculatedValue += ($isoTask->weight / 100) * $value; // Convert weight to decimal
                             }
 
                             $metric = new Metric([
