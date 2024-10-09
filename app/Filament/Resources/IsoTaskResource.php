@@ -14,6 +14,10 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Illuminate\Support\Facades\DB;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\Layout\Stack;
+use Livewire\Component as Livewire;
+use Illuminate\Validation\ValidationException;
 
 class IsoTaskResource extends Resource
 {
@@ -52,12 +56,21 @@ class IsoTaskResource extends Resource
                 // Define your filters here
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->after(function (Livewire $livewire) {
+                        $livewire->dispatch('iso-task-updated');
+                    }),
+                Tables\Actions\DeleteAction::make()
+                    ->after(function (Livewire $livewire) {
+                        $livewire->dispatch('iso-task-updated');
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->after(function (Livewire $livewire) {
+                            $livewire->dispatch('iso-task-updated');
+                        }),
                 ]),
             ]);
     }
@@ -99,31 +112,9 @@ class IsoTaskResource extends Resource
                     ->default(0)
                     ->minValue(0)
                     ->maxValue(100)
-                    ->afterStateUpdated(function (Get $get, Set $set) {
-                        $currentId = $get('id');
-                        $currentWeight = $get('weight');
-
-                        $totalWeight = IsoTask::when($currentId, function ($query) use ($currentId) {
-                                $query->where('id', '!=', $currentId);
-                            })
-                            ->sum('weight') + $currentWeight;
-
-                        if ($totalWeight > 100) {
-                            $set('weight', 100 - (IsoTask::when($currentId, function ($query) use ($currentId) {
-                                $query->where('id', '!=', $currentId);
-                            })->sum('weight')));
-                        }
-                    })
-                    ->helperText(function (Get $get) {
-                        $currentId = $get('id');
-                        $currentWeight = $get('weight');
-
-                        $totalWeight = IsoTask::when($currentId, function ($query) use ($currentId) {
-                                $query->where('id', '!=', $currentId);
-                            })
-                            ->sum('weight') + $currentWeight;
-
-                        return "Total weight: {$totalWeight}% / 100%";
+                    ->helperText(function () {
+                        $totalWeight = IsoTask::sum('weight');
+                        return "Current total weight: {$totalWeight}% / 100%";
                     }),
             ]);
     }

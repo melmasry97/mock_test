@@ -13,14 +13,34 @@ class CreateIsoTask extends CreateRecord
 
     protected function beforeCreate(): void
     {
-        if (IsoTask::count() >= 9) {
+        $taskCount = IsoTask::count();
+        if ($taskCount >= 9) {
             Notification::make()
-                ->title('ISO Task limit reached')
-                ->body('You can only create up to 9 ISO Tasks.')
+                ->title('Maximum number of ISO tasks reached')
+                ->body('You cannot create more than 9 ISO tasks.')
                 ->danger()
                 ->send();
 
             $this->halt();
         }
+
+        $newWeight = $this->data['weight'];
+        $totalWeight = IsoTask::sum('weight') + $newWeight;
+
+        if ($totalWeight > 100) {
+            Notification::make()
+                ->title('Total weight exceeds 100%')
+                ->body("The total weight of all ISO tasks cannot exceed 100%. Current total: {$totalWeight}%")
+                ->danger()
+                ->send();
+
+            $this->halt();
+        }
+    }
+
+    protected function afterCreate(): void
+    {
+        // Dispatch the event after creating the ISO task
+        $this->dispatch('iso-task-updated');
     }
 }

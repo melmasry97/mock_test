@@ -15,22 +15,22 @@ class IsoTaskSeeder extends Seeder
 
         // Define 9 ISO tasks with initial weights
         $isoTasks = [
-            ['name' => 'ISO Task 1', 'weight' => 0.10],
-            ['name' => 'ISO Task 2', 'weight' => 0.15],
-            ['name' => 'ISO Task 3', 'weight' => 0.10],
-            ['name' => 'ISO Task 4', 'weight' => 0.12],
-            ['name' => 'ISO Task 5', 'weight' => 0.13],
-            ['name' => 'ISO Task 6', 'weight' => 0.10],
-            ['name' => 'ISO Task 7', 'weight' => 0.10],
-            ['name' => 'ISO Task 8', 'weight' => 0.10],
-            ['name' => 'ISO Task 9', 'weight' => 0.10],
+            ['name' => 'ISO Task 1', 'weight' => 10],
+            ['name' => 'ISO Task 2', 'weight' => 15],
+            ['name' => 'ISO Task 3', 'weight' => 10],
+            ['name' => 'ISO Task 4', 'weight' => 12],
+            ['name' => 'ISO Task 5', 'weight' => 13],
+            ['name' => 'ISO Task 6', 'weight' => 10],
+            ['name' => 'ISO Task 7', 'weight' => 10],
+            ['name' => 'ISO Task 8', 'weight' => 10],
+            ['name' => 'ISO Task 9', 'weight' => 10],
         ];
 
         $totalWeight = 0;
 
         foreach ($isoTasks as $task) {
-            // Ensure the total weight doesn't exceed 1 (100%)
-            $weight = min($task['weight'], 1 - $totalWeight);
+            // Ensure the total weight doesn't exceed 100%
+            $weight = min($task['weight'], 100 - $totalWeight);
             $totalWeight += $weight;
 
             IsoTask::create([
@@ -41,15 +41,15 @@ class IsoTaskSeeder extends Seeder
             ]);
 
             // If we've reached 100%, stop creating tasks
-            if ($totalWeight >= 1) {
+            if ($totalWeight >= 100) {
                 break;
             }
         }
 
-        // If the total weight is less than 1, adjust the last task
-        if ($totalWeight < 1 && count($isoTasks) > 0) {
+        // If the total weight is less than 100, adjust the last task
+        if ($totalWeight < 100 && count($isoTasks) > 0) {
             $lastTask = IsoTask::latest()->first();
-            $lastTask->update(['weight' => $lastTask->weight + (1 - $totalWeight)]);
+            $lastTask->update(['weight' => $lastTask->weight + (100 - $totalWeight)]);
         }
     }
 }
