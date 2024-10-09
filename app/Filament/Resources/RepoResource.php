@@ -1,0 +1,112 @@
+<?php
+
+namespace App\Filament\Resources;
+
+use Filament\Forms;
+use App\Models\Task;
+use Filament\Tables;
+use App\Enums\TaskState;
+use Filament\Forms\Form;
+use Filament\Tables\Table;
+use App\Models\ProjectModule;
+use Filament\Resources\Resource;
+use Illuminate\Database\Eloquent\Builder;
+use App\Filament\Resources\RepoResource\Pages;
+
+class RepoResource extends Resource
+{
+    protected static ?string $model = Task::class;
+
+    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+
+    protected static ?string $navigationLabel = 'Repos';
+
+    protected static ?string $navigationGroup = 'Repo Management';
+
+    protected static ?string $slug = 'repos';
+
+    public static function form(Form $form): Form
+    {
+        return $form
+            ->schema([
+                Forms\Components\TextInput::make('name')
+                    ->required()
+                    ->maxLength(255),
+                Forms\Components\Textarea::make('description')
+                    ->maxLength(65535),
+                Forms\Components\Hidden::make('state')
+                    ->default(TaskState::REPO),
+                Forms\Components\TextInput::make('weight')
+                    ->label('Weight (%)')
+                    ->required()
+                    ->numeric()
+                    ->default(0)
+                    ->minValue(0)
+                    ->maxValue(100),
+                Forms\Components\Select::make('project_module_id')
+                    ->label('Project Module')
+                    ->options(ProjectModule::all()->pluck('name', 'id'))
+                    ->searchable()
+                    ->required(),
+            ]);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('name')
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('description')
+                    ->limit(50),
+                Tables\Columns\TextColumn::make('state')
+                    ->formatStateUsing(fn (TaskState $state): string => TaskState::getLabels()[$state->value])
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('weight')
+                    ->label('Weight (%)')
+                    ->numeric()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('projectModule.name')
+                    ->label('Project Module')
+                    ->sortable(),
+            ])
+            ->filters([
+                //
+            ])
+            ->actions([
+                Tables\Actions\EditAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            //
+        ];
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListRepos::route('/'),
+            'create' => Pages\CreateRepo::route('/create'),
+            'edit' => Pages\EditRepo::route('/{record}/edit'),
+        ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->where('state', TaskState::REPO);
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return true;
+    }
+}
