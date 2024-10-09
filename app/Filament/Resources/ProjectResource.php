@@ -26,9 +26,6 @@ class ProjectResource extends Resource
                 Forms\Components\TextInput::make('weight')
                     ->required()
                     ->numeric(),
-                Forms\Components\Select::make('category_id')
-                    ->relationship('category', 'name')
-                    ->required(),
             ]);
     }
 
@@ -40,8 +37,6 @@ class ProjectResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('weight')
                     ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('category.name')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()

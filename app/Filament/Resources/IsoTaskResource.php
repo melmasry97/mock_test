@@ -4,13 +4,10 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\IsoTaskResource\Pages;
 use App\Models\IsoTask;
-use App\Models\Category; // Import Category model
-use App\Enums\TaskState;
 use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Illuminate\Support\Facades\DB;
@@ -23,10 +20,8 @@ class IsoTaskResource extends Resource
 {
     protected static ?string $model = IsoTask::class;
 
-
     protected static ?string $navigationLabel = 'ISO';
-    protected static ?string $navigationIcon = 'heroicon-o-document-text'; // Set a valid icon for the panel
-
+    protected static ?string $navigationIcon = 'heroicon-o-document-text';
 
     public static function table(Tables\Table $table): Tables\Table
     {
@@ -38,10 +33,8 @@ class IsoTaskResource extends Resource
                 Tables\Columns\TextColumn::make('description')
                     ->limit(50)
                     ->searchable(),
-                Tables\Columns\TextColumn::make('category.name') // Show category name
-                    ->label('Category'), // Label for the field
-                Tables\Columns\TextColumn::make('weight') // Add weight column
-                    ->label('Weight (%)') // Label for the field
+                Tables\Columns\TextColumn::make('weight')
+                    ->label('Weight (%)')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
@@ -100,11 +93,6 @@ class IsoTaskResource extends Resource
                     ->maxLength(255),
                 Forms\Components\Textarea::make('description')
                     ->maxLength(65535),
-                Forms\Components\Select::make('category_id')
-                    ->label('Category')
-                    ->options(Category::pluck('name', 'id'))
-                    ->required()
-                    ->searchable(),
                 Forms\Components\TextInput::make('weight')
                     ->label('Weight (%)')
                     ->required()
@@ -122,6 +110,5 @@ class IsoTaskResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery();
-        // Remove the when clause for now
     }
 }
