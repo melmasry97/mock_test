@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\ProjectModuleResource\Pages;
 use App\Models\ProjectModule;
 use App\Models\Project;
+use App\Models\Category;
 use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -13,7 +14,7 @@ class ProjectModuleResource extends Resource
 {
     protected static ?string $model = ProjectModule::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack'; // Changed this line
 
     public static function form(Forms\Form $form): Forms\Form
     {
@@ -32,6 +33,11 @@ class ProjectModuleResource extends Resource
                     ->options(Project::pluck('name', 'id'))
                     ->required()
                     ->searchable(),
+                Forms\Components\Select::make('category_id')
+                    ->label('Category')
+                    ->options(Category::pluck('name', 'id'))
+                    ->required()
+                    ->searchable(),
             ]);
     }
 
@@ -41,8 +47,6 @@ class ProjectModuleResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name'),
                 Tables\Columns\TextColumn::make('weight'),
-                Tables\Columns\TextColumn::make('project.name')
-                    ->label('Project'),
             ])
             ->filters([
                 //
