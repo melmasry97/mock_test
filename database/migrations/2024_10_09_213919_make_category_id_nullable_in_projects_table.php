@@ -1,0 +1,40 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+class MakeCategoryIdNullableInProjectsTable extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('projects', function (Blueprint $table) {
+            $table->integer('category_id')->nullable()->change();
+        });
+        Schema::table('project_modules', function (Blueprint $table) {
+            $table->integer('category_id')->nullable()->change();
+        });
+        Schema::table('iso_tasks', function (Blueprint $table) {
+            $table->integer('category_id')->nullable()->change();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('projects', function (Blueprint $table) {
+            $table->integer('category_id')->nullable(false)->change();
+        });
+        Schema::table('project_modules', function (Blueprint $table) {
+            $table->integer('category_id')->nullable()->change();
+        });
+        Schema::table('iso_tasks', function (Blueprint $table) {
+            $table->integer('category_id')->nullable()->change();
+        });
+    }
+}
