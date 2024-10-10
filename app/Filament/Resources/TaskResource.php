@@ -53,7 +53,7 @@ class TaskResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')  // Changed 'title' to 'name'
+                Tables\Columns\TextColumn::make('name')
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('description')
@@ -70,7 +70,19 @@ class TaskResource extends Resource
                     ->sortable(),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('state')
+                    ->options([
+                        'all' => 'All Tasks',
+                        TaskState::REPO->value => 'Repo Tasks',
+                        TaskState::DONE->value => 'Done Tasks',
+                    ])
+                    ->default('all')
+                    ->query(function ($query, array $data) {
+                        if ($data['value'] === 'all') {
+                            return $query;
+                        }
+                        return $query->where('state', $data['value']);
+                    }),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
