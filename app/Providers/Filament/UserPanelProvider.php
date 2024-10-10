@@ -17,12 +17,15 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use App\Filament\User\Resources\RepoResource;
+use App\Filament\User\Resources\BacklogResource;
 
 class UserPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
         return $panel
+            ->default()
             ->id('user')
             ->path('user')
             ->login()
@@ -31,7 +34,9 @@ class UserPanelProvider extends PanelProvider
             ])
             ->discoverResources(in: app_path('Filament/User/Resources'), for: 'App\\Filament\\User\\Resources')
             ->resources([
-                \App\Filament\User\Resources\IsoTaskResource::class,
+                RepoResource::class,
+                RepoResource::class,
+                BacklogResource::class,
                 // Add other resources for the user panel here
             ])
             ->pages([

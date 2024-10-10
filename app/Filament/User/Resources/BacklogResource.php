@@ -1,0 +1,118 @@
+<?php
+
+namespace App\Filament\User\Resources;
+
+use Filament\Forms;
+use App\Models\Task;
+use Filament\Tables;
+use App\Enums\TaskState;
+use Filament\Forms\Form;
+use Filament\Tables\Table;
+use Pages\EditBacklogTask;
+use Pages\ListBacklogTasks;
+use Pages\CreateBacklogTask;
+use App\Models\ProjectModule;
+use Filament\Resources\Resource;
+use Illuminate\Database\Eloquent\Builder;
+use App\Filament\User\Resources\BacklogResource\Pages;
+
+class BacklogResource extends Resource
+{
+    protected static ?string $model = Task::class;
+
+    protected static ?string $navigationIcon = 'heroicon-o-queue-list';
+
+    protected static ?string $navigationLabel = 'Backlog Tasks';
+
+    protected static ?string $navigationGroup = 'Task Management';
+
+    protected static ?string $slug = 'backlog-tasks';
+
+    public static function form(Form $form): Form
+    {
+        return $form
+            ->schema([
+                Forms\Components\TextInput::make('name')
+                    ->required()
+                    ->maxLength(255),
+                Forms\Components\Textarea::make('description')
+                    ->maxLength(65535),
+                Forms\Components\Hidden::make('state')
+                    ->default(TaskState::DONE),
+                Forms\Components\TextInput::make('weight')
+                    ->label('Weight (%)')
+                    ->required()
+                    ->numeric()
+                    ->default(0)
+                    ->minValue(0)
+                    ->maxValue(100),
+                Forms\Components\Select::make('project_module_id')
+                    ->label('Project Module')
+                    ->options(ProjectModule::all()->pluck('name', 'id'))
+                    ->searchable()
+                    ->required(),
+            ]);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('name')
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('description')
+                    ->limit(50),
+                Tables\Columns\TextColumn::make('weight')
+                    ->label('Weight (%)')
+                    ->numeric()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('projectModule.name')
+                    ->label('Project Module')
+                    ->sortable(),
+            ])
+            ->filters([
+                //
+            ])
+            ->actions([
+                Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            //
+        ];
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListBacklogTasks::route('/'),
+            'create' => Pages\CreateBacklogTask::route('/create'),
+            'edit' => Pages\EditBacklogTask::route('/{record}/edit'),
+        ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->where('state', TaskState::DONE);
+    }
+
+    public static function getModelLabel(): string
+    {
+        return 'Backlog Task';
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return 'Backlog Tasks';
+    }
+}
