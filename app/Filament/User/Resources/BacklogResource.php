@@ -8,12 +8,10 @@ use Filament\Tables;
 use App\Enums\TaskState;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
-use Pages\EditBacklogTask;
-use Pages\ListBacklogTasks;
-use Pages\CreateBacklogTask;
 use App\Models\ProjectModule;
 use Filament\Resources\Resource;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use App\Filament\User\Resources\BacklogResource\Pages;
 
 class BacklogResource extends Resource
@@ -76,12 +74,9 @@ class BacklogResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                // Remove bulk actions if not needed
             ]);
     }
 
@@ -96,8 +91,6 @@ class BacklogResource extends Resource
     {
         return [
             'index' => Pages\ListBacklogTasks::route('/'),
-            'create' => Pages\CreateBacklogTask::route('/create'),
-            'edit' => Pages\EditBacklogTask::route('/{record}/edit'),
         ];
     }
 
@@ -114,5 +107,15 @@ class BacklogResource extends Resource
     public static function getPluralModelLabel(): string
     {
         return 'Backlog Tasks';
+    }
+
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return false;
     }
 }

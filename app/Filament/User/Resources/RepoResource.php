@@ -17,6 +17,7 @@ use App\Filament\User\Resources\RepoResource\Pages;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Filament\Notifications\Notification;
+use Carbon\Carbon;
 
 class RepoResource extends Resource
 {
@@ -71,6 +72,9 @@ class RepoResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('projectModule.name')
                     ->label('Project Module')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('end_time')
+                    ->dateTime()
                     ->sortable(),
             ])
             ->filters([
@@ -143,13 +147,22 @@ class RepoResource extends Resource
                             $record->metrics()->save($metric);
                             $record->update(['state' => TaskState::DONE]);
 
-                            Log::info('Metric saved for task: ' . $record->id);
+                            // Check if end time has been reached
+                            if (Carbon::now()->gte($record->end_time)) {
+                                $latestMetric = $record->metrics()->latest()->first();
+                                if ($latestMetric) {
+                                    $newWeight = $record->projectModule->weight * $latestMetric->calculated_value * $latestMetric->matrix_calculated_value;
+                                    $record->update(['weight' => $newWeight]);
+                                }
+                            }
+
+                            Log::info('Metric saved and weight updated for task: ' . $record->id);
                         });
 
                         Notification::make()
                             ->success()
                             ->title('Metrics added successfully')
-                            ->body('The metrics have been added and the task has been marked as done.')
+                            ->body('The metrics have been added, the task has been marked as done, and the weight has been updated if applicable.')
                             ->send();
                     })
                     ->modalHeading('Evaluate Repo Task')
