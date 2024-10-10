@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class ProjectModule extends Model
 {
@@ -24,5 +25,10 @@ class ProjectModule extends Model
     public function tasks()
     {
         return $this->hasMany(Task::class);
+    }
+
+    public function evaluations(): MorphMany
+    {
+        return $this->morphMany(Evaluate::class, 'evaluationable');
     }
 }

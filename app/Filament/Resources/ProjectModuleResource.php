@@ -8,6 +8,9 @@ use App\Models\Project;
 use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Actions\Action;
+use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class ProjectModuleResource extends Resource
 {
@@ -32,6 +35,7 @@ class ProjectModuleResource extends Resource
                     ->options(Project::pluck('name', 'id'))
                     ->required()
                     ->searchable(),
+                Forms\Components\DatePicker::make('end_date'),
             ]);
     }
 
@@ -43,12 +47,30 @@ class ProjectModuleResource extends Resource
                 Tables\Columns\TextColumn::make('weight'),
                 Tables\Columns\TextColumn::make('project.name')
                     ->label('Project'),
+                Tables\Columns\TextColumn::make('end_date')
+                    ->date(),
+                Tables\Columns\TextColumn::make('average_evaluation')
+                    ->label('Average Evaluation')
+                    ->getStateUsing(function (ProjectModule $record) {
+                        $evaluations = $record->evaluations;
+                        if ($evaluations->isEmpty()) {
+                            return 'No evaluations';
+                        }
+                        $average = $evaluations->avg('weight');
+                        return number_format($average, 2);
+                    }),
             ])
             ->filters([
                 //
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Action::make('viewEvaluations')
+                    ->label('View Evaluations')
+                    ->icon('heroicon-o-eye')
+                    ->modalContent(function (ProjectModule $record) {
+                        return view('filament.resources.project-module-resource.evaluations', ['projectModule' => $record]);
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),
