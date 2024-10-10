@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class MakeCategoryIdNullableInProjectsTable extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
@@ -37,4 +37,4 @@ class MakeCategoryIdNullableInProjectsTable extends Migration
             $table->integer('category_id')->nullable()->change();
         });
     }
-}
+};
