@@ -90,6 +90,16 @@ class RepoResource extends Resource
                     ->modalSubmitActionLabel('Save Evaluation')
                     ->modalIcon('heroicon-o-star')
                     ->form([
+                        Forms\Components\Section::make('Module Information')
+                            ->schema([
+                                Forms\Components\TextInput::make('module_weight')
+                                    ->label('Module Weight')
+                                    ->disabled()
+                                    ->dehydrated(false)
+                                    ->default(function (Task $record) {
+                                        return $record->projectModule->weight ?? 'N/A';
+                                    }),
+                            ]),
                         Forms\Components\Section::make('RICE Weight')
                             ->schema([
                                 Forms\Components\Grid::make(4)
