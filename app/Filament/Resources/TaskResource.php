@@ -34,13 +34,6 @@ class TaskResource extends Resource
                     ->options(TaskState::getLabels())
                     ->enum(TaskState::class)
                     ->required(),
-                Forms\Components\TextInput::make('weight')
-                    ->label('Weight (%)')
-                    ->required()
-                    ->numeric()
-                    ->default(0)
-                    ->minValue(0)
-                    ->maxValue(100),
                 Forms\Components\Select::make('project_module_id')
                     ->label('Project Module')
                     ->options(ProjectModule::all()->pluck('name', 'id'))
@@ -60,10 +53,6 @@ class TaskResource extends Resource
                     ->limit(50),
                 Tables\Columns\TextColumn::make('state')
                     ->formatStateUsing(fn (TaskState $state): string => TaskState::getLabels()[$state->value])
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('weight')
-                    ->label('Weight (%)')
-                    ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('projectModule.name')
                     ->label('Project Module')

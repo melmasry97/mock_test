@@ -14,13 +14,14 @@ class Task extends Model
         'name',
         'description',
         'state',
-        'weight',
+        'weight', // This can now be null
         'project_module_id',
         'end_date',
     ];
 
     protected $casts = [
         'state' => TaskState::class,
+        'weight' => 'float',
     ];
 
     public function metrics()

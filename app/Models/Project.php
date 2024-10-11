@@ -10,6 +10,16 @@ class Project extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'name',
+        'description',
+        'weight',
+    ];
+
+    protected $casts = [
+        'weight' => 'float',
+    ];
+
     protected $guarded = [];
 
     public function category()

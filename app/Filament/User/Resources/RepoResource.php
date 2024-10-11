@@ -41,13 +41,6 @@ class RepoResource extends Resource
                     ->maxLength(65535),
                 Forms\Components\Hidden::make('state')
                     ->default(TaskState::REPO),
-                Forms\Components\TextInput::make('weight')
-                    ->label('Weight (%)')
-                    ->required()
-                    ->numeric()
-                    ->default(0)
-                    ->minValue(0)
-                    ->maxValue(100),
                 Forms\Components\Select::make('project_module_id')
                     ->label('Project Module')
                     ->options(ProjectModule::all()->pluck('name', 'id'))

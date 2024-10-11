@@ -32,7 +32,7 @@ class TaskResource extends Resource
                 Forms\Components\DatePicker::make('end_date')
                     ->label('End Date')
                     ->required(),
-                //
+                // Weight input removed
             ]);
     }
 
@@ -48,16 +48,13 @@ class TaskResource extends Resource
                 Tables\Columns\TextColumn::make('state')
                     ->formatStateUsing(fn (TaskState $state): string => TaskState::getLabels()[$state->value])
                     ->sortable(),
-                Tables\Columns\TextColumn::make('weight')
-                    ->label('Weight (%)')
-                    ->numeric()
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('projectModule.name')
                     ->label('Project Module')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('end_date')
                     ->date()
                     ->sortable(),
+                // Weight column removed
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('state')

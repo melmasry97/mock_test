@@ -17,6 +17,7 @@ use App\Filament\Resources\RepoResource\Pages;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Auth;
 
 class RepoResource extends Resource
 {
@@ -41,13 +42,6 @@ class RepoResource extends Resource
                     ->maxLength(65535),
                 Forms\Components\Hidden::make('state')
                     ->default(TaskState::REPO),
-                Forms\Components\TextInput::make('weight')
-                    ->label('Weight (%)')
-                    ->required()
-                    ->numeric()
-                    ->default(0)
-                    ->minValue(0)
-                    ->maxValue(100),
                 Forms\Components\Select::make('project_module_id')
                     ->label('Project Module')
                     ->options(ProjectModule::all()->pluck('name', 'id'))
@@ -81,7 +75,7 @@ class RepoResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\Action::make('Evaluate')  // Changed from 'Add Metrics' to 'Evaluate'
+                Tables\Actions\Action::make('Evaluate')
                     ->form([
                         Forms\Components\Section::make('Score Weight')
                             ->schema([
@@ -155,8 +149,10 @@ class RepoResource extends Resource
                             ->body('The metrics have been added and the task has been marked as done.')
                             ->send();
                     })
-                    ->visible(fn (Task $record) => $record->state === TaskState::REPO)
-                    ->modalHeading('Evaluate Repo Task')  // Changed modal heading
+                    ->visible(fn (Task $record) =>
+                        $record->state === TaskState::REPO && !Auth::user()->isAdmin()
+                    )
+                    ->modalHeading('Evaluate Repo Task')
                     ->modalButton('Submit'),
             ])
             ->bulkActions([
