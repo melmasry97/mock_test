@@ -90,24 +90,24 @@ class RepoResource extends Resource
                     ->modalSubmitActionLabel('Save Evaluation')
                     ->modalIcon('heroicon-o-star')
                     ->form([
-                        Forms\Components\Section::make('Score Weight')
+                        Forms\Components\Section::make('RICE Weight')
                             ->schema([
                                 Forms\Components\Grid::make(4)
                                     ->schema([
                                         Forms\Components\Select::make('input1')
-                                            ->label('Input 1')
+                                            ->label('R (Reach)')
                                             ->options([1 => 1, 3 => 3, 4 => 4, 6 => 6, 8 => 8, 10 => 10])
                                             ->required(),
                                         Forms\Components\Select::make('input2')
-                                            ->label('Input 2')
+                                            ->label('I (Impact)')
                                             ->options([1 => 1, 3 => 3, 4 => 4, 6 => 6, 8 => 8, 10 => 10])
                                             ->required(),
                                         Forms\Components\Select::make('input3')
-                                            ->label('Input 3')
+                                            ->label('C (Confidence)')
                                             ->options([1 => 1, 3 => 3, 4 => 4, 6 => 6, 8 => 8, 10 => 10])
                                             ->required(),
                                         Forms\Components\Select::make('input4')
-                                            ->label('Input 4')
+                                            ->label('E (Effort)')
                                             ->options([1 => 1, 3 => 3, 5 => 5, 7 => 7, 10 => 10])
                                             ->required(),
                                     ]),
