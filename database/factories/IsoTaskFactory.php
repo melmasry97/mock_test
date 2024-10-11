@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\IsoTask;
-use App\Models\Category;
+use App\Models\Project;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class IsoTaskFactory extends Factory
@@ -14,11 +14,10 @@ class IsoTaskFactory extends Factory
     {
         return [
             'name' => $this->faker->sentence(3),
-            'weight' => $this->faker->randomFloat(2, 1, 100),
-            'category_id' => Category::factory(),
-            'description' => $this->faker->paragraph(),
-            'created_at' => $this->faker->dateTimeBetween('-1 year', 'now'),
-            'updated_at' => $this->faker->dateTimeBetween('-1 year', 'now'),
+            'description' => $this->faker->paragraph,
+            'weight' => $this->faker->numberBetween(1, 100),
+            'project_id' => Project::factory(),
+            'end_date' => $this->faker->dateTimeBetween('+1 week', '+1 year')->format('Y-m-d'),
         ];
     }
 }

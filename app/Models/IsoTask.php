@@ -4,31 +4,27 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class IsoTask extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'name',
-        'description',
-        'category_id',
-        'weight',
+    protected $fillable = ['name', 'description', 'weight', 'project_id', 'end_date'];
+
+    protected $casts = [
+        'end_date' => 'date',
+        'weight' => 'integer',
     ];
 
-    protected static function boot()
+    public function project(): BelongsTo
     {
-        parent::boot();
-
-        static::creating(function ($isoTask) {
-            if (static::count() >= 9) {
-                throw new \Exception('Cannot create more than 9 ISO Tasks.');
-            }
-        });
+        return $this->belongsTo(Project::class);
     }
 
-    public function category()
+    public function evaluations(): MorphMany
     {
-        return $this->belongsTo(Category::class);
+        return $this->morphMany(Evaluate::class, 'evaluationable');
     }
 }
