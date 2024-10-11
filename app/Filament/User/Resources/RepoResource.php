@@ -105,19 +105,19 @@ class RepoResource extends Resource
                                 Forms\Components\Grid::make(4)
                                     ->schema([
                                         Forms\Components\Select::make('input1')
-                                            ->label('R (Reach)')
+                                            ->label('Reach (R)')
                                             ->options([1 => 1, 3 => 3, 4 => 4, 6 => 6, 8 => 8, 10 => 10])
                                             ->required(),
                                         Forms\Components\Select::make('input2')
-                                            ->label('I (Impact)')
+                                            ->label('Impact (I)')
                                             ->options([1 => 1, 3 => 3, 4 => 4, 6 => 6, 8 => 8, 10 => 10])
                                             ->required(),
                                         Forms\Components\Select::make('input3')
-                                            ->label('C (Confidence)')
+                                            ->label('Confidence (C)')
                                             ->options([1 => 1, 3 => 3, 4 => 4, 6 => 6, 8 => 8, 10 => 10])
                                             ->required(),
                                         Forms\Components\Select::make('input4')
-                                            ->label('E (Effort)')
+                                            ->label('Effort (E)')
                                             ->options([1 => 1, 3 => 3, 5 => 5, 7 => 7, 10 => 10])
                                             ->required(),
                                     ]),
