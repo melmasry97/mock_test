@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('evaluationable_id');
             $table->string('evaluationable_type');
-            $table->integer('weight')->nullable();
+            $table->float('weight', 8, 3)->nullable();
             $table->unsignedBigInteger('user_id');
             $table->timestamps();
 

@@ -79,7 +79,7 @@ class IsoTaskResource extends Resource
                 Tables\Columns\TextColumn::make('total_evaluation')
                     ->label('Total Evaluation')
                     ->getStateUsing(function (IsoTask $record) {
-                        return $record->evaluations->sum('weight');
+                        return number_format($record->evaluations->sum('weight'), 3); // Format to 3 decimal places
                     }),
             ])
             ->filters([
@@ -104,9 +104,12 @@ class IsoTaskResource extends Resource
                             ->required(),
                     ])
                     ->action(function (IsoTask $record, array $data): void {
+                        // Calculate the user's evaluation based on the provided formula
+                        $userEvaluation = ($record->weight / 100) * $data['weight'];
+
                         $record->evaluations()->updateOrCreate(
                             ['user_id' => Auth::id()],
-                            ['weight' => $data['weight']]
+                            ['weight' => $userEvaluation] // Use the calculated evaluation
                         );
                     })
                     ->visible(function (IsoTask $record): bool {
