@@ -14,6 +14,10 @@ use Illuminate\Database\Eloquent\Builder;
 use App\Filament\User\Resources\TaskResource\Pages;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\User\Resources\TaskResource\RelationManagers;
+use Illuminate\Support\Facades\DB;
+use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class TaskResource extends Resource
 {
@@ -25,6 +29,9 @@ class TaskResource extends Resource
     {
         return $form
             ->schema([
+                Forms\Components\DatePicker::make('end_date')
+                    ->label('End Date')
+                    ->required(),
                 //
             ]);
     }
@@ -47,6 +54,9 @@ class TaskResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('projectModule.name')
                     ->label('Project Module')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('end_date')
+                    ->date()
                     ->sortable(),
             ])
             ->filters([
@@ -140,7 +150,11 @@ class TaskResource extends Resource
                             ->body('The metrics have been added and the task has been marked as done.')
                             ->send();
                     })
-                    ->visible(fn (Task $record) => $record->state === TaskState::REPO || $record->state === TaskState::IN_PROGRESS)
+                    ->visible(function (Task $record) {
+                        $isStateValid = $record->state === TaskState::REPO || $record->state === TaskState::IN_PROGRESS;
+                        $isBeforeEndDate = !$record->end_date || Carbon::now()->lte($record->end_date);
+                        return $isStateValid && $isBeforeEndDate;
+                    })
                     ->modalHeading('Add Metrics for Task')
                     ->modalButton('Submit'),
             ])

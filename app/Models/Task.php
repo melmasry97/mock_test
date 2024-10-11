@@ -16,6 +16,7 @@ class Task extends Model
         'state',
         'weight',
         'project_module_id',
+        'end_date',
     ];
 
     protected $casts = [

@@ -2,22 +2,23 @@
 
 namespace App\Filament\User\Resources;
 
+use Carbon\Carbon;
 use Filament\Forms;
-use App\Models\Task;
 use Filament\Tables;
+use App\Models\Task;
+use App\Models\IsoTask;
+use App\Models\Metric;
+use App\Models\ProjectModule;
 use App\Enums\TaskState;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
-use App\Models\ProjectModule;
-use App\Models\Metric;
-use App\Models\IsoTask;
 use Filament\Resources\Resource;
+use Illuminate\Support\Facades\Auth;
+use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
 use App\Filament\User\Resources\RepoResource\Pages;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Filament\Notifications\Notification;
-use Carbon\Carbon;
 
 class RepoResource extends Resource
 {
@@ -28,8 +29,6 @@ class RepoResource extends Resource
     protected static ?string $navigationLabel = 'Repos';
 
     protected static ?string $navigationGroup = 'Repo Management';
-
-    protected static ?string $slug = 'repos';
 
     public static function form(Form $form): Form
     {
@@ -54,6 +53,9 @@ class RepoResource extends Resource
                     ->options(ProjectModule::all()->pluck('name', 'id'))
                     ->searchable()
                     ->required(),
+                Forms\Components\DatePicker::make('end_date')
+                    ->label('End Date')
+                    ->required(),
             ]);
     }
 
@@ -73,16 +75,20 @@ class RepoResource extends Resource
                 Tables\Columns\TextColumn::make('projectModule.name')
                     ->label('Project Module')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('end_time')
-                    ->dateTime()
+                Tables\Columns\TextColumn::make('end_date')
+                    ->date()
                     ->sortable(),
             ])
             ->filters([
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\Action::make('Evaluate')
+                Tables\Actions\Action::make('evaluate')
+                    ->label('Evaluate')
+                    ->icon('heroicon-o-star')
+                    ->modalHeading('Evaluate Repo')
+                    ->modalSubmitActionLabel('Save Evaluation')
+                    ->modalIcon('heroicon-o-star')
                     ->form([
                         Forms\Components\Section::make('Score Weight')
                             ->schema([
@@ -147,8 +153,8 @@ class RepoResource extends Resource
                             $record->metrics()->save($metric);
                             $record->update(['state' => TaskState::DONE]);
 
-                            // Check if end time has been reached
-                            if (Carbon::now()->gte($record->end_time)) {
+                            // Check if end date has been reached or if there's no end date
+                            if (!$record->end_date || Carbon::now()->gte($record->end_date)) {
                                 $latestMetric = $record->metrics()->latest()->first();
                                 if ($latestMetric) {
                                     $newWeight = $record->projectModule->weight * $latestMetric->calculated_value * $latestMetric->matrix_calculated_value;
@@ -165,8 +171,11 @@ class RepoResource extends Resource
                             ->body('The metrics have been added, the task has been marked as done, and the weight has been updated if applicable.')
                             ->send();
                     })
-                    ->modalHeading('Evaluate Repo Task')
-                    ->modalButton('Submit'),
+                    ->visible(function (Task $record) {
+                        $isBeforeEndDate = $record->end_date ? Carbon::now()->lt($record->end_date) : true;
+                        $userHasNotEvaluated = !$record->metrics()->where('user_id', Auth::id())->exists();
+                        return $isBeforeEndDate && $userHasNotEvaluated;
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -175,11 +184,14 @@ class RepoResource extends Resource
             ]);
     }
 
-    public static function getRelations(): array
+    public static function getEloquentQuery(): Builder
     {
-        return [
-            //
-        ];
+        return parent::getEloquentQuery()
+            ->where('state', TaskState::REPO)
+            ->withCount(['metrics' => function ($query) {
+                $query->where('user_id', Auth::id());
+            }])
+            ->with(['metrics', 'projectModule']);
     }
 
     public static function getPages(): array
@@ -189,11 +201,6 @@ class RepoResource extends Resource
             'create' => Pages\CreateRepo::route('/create'),
             'edit' => Pages\EditRepo::route('/{record}/edit'),
         ];
-    }
-
-    public static function getEloquentQuery(): Builder
-    {
-        return parent::getEloquentQuery()->where('state', TaskState::REPO);
     }
 
     public static function getModelLabel(): string

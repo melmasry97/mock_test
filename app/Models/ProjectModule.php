@@ -10,7 +10,7 @@ class ProjectModule extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'weight', 'project_id', 'category_id'];
+    protected $fillable = ['name', 'weight', 'project_id', 'category_id' , 'end_date'];
 
     public function project()
     {

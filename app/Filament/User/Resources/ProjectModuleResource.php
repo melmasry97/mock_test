@@ -11,7 +11,6 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
 
 class ProjectModuleResource extends Resource
 {
@@ -25,18 +24,16 @@ class ProjectModuleResource extends Resource
             ->schema([
                 Forms\Components\TextInput::make('name')
                     ->required()
-                    ->maxLength(255)
-                    ->disabled(),
+                    ->maxLength(255),
                 Forms\Components\Textarea::make('description')
                     ->maxLength(65535)
-                    ->columnSpanFull()
-                    ->disabled(),
+                    ->columnSpanFull(),
                 Forms\Components\Select::make('project_id')
                     ->relationship('project', 'name')
-                    ->required()
-                    ->disabled(),
+                    ->required(),
                 Forms\Components\DatePicker::make('end_date')
-                    ->disabled(),
+                    ->label('End Date')
+                    ->required(),
             ]);
     }
 
@@ -51,9 +48,8 @@ class ProjectModuleResource extends Resource
                 Tables\Columns\TextColumn::make('end_date')
                     ->date()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('evaluations.weight')
+                Tables\Columns\TextColumn::make('your_evaluation')
                     ->label('Your Evaluation')
-                    ->default('Not evaluated')
                     ->getStateUsing(function (ProjectModule $record) {
                         $evaluation = $record->evaluations()->where('user_id', Auth::id())->first();
                         return $evaluation ? $evaluation->weight : 'Not evaluated';
@@ -73,6 +69,7 @@ class ProjectModuleResource extends Resource
                 //
             ])
             ->actions([
+                Tables\Actions\EditAction::make(),
                 Tables\Actions\Action::make('evaluate')
                     ->label('Evaluate')
                     ->icon('heroicon-o-star')
@@ -96,13 +93,7 @@ class ProjectModuleResource extends Resource
                             ['weight' => $data['weight']]
                         );
                     })
-                    ->visible(function (ProjectModule $record): bool {
-                        $endDate = Carbon::parse($record->end_date);
-                        $today = Carbon::today();
-                        $userHasEvaluated = $record->evaluations()->where('user_id', Auth::id())->exists();
-
-                        return $today->lte($endDate) && !$userHasEvaluated;
-                    }),
+                    ->visible(fn (ProjectModule $record) => !$record->evaluations()->where('user_id', Auth::id())->exists()),
             ])
             ->bulkActions([]);
     }
@@ -113,13 +104,15 @@ class ProjectModuleResource extends Resource
             ->withCount(['evaluations' => function ($query) {
                 $query->where('user_id', Auth::id());
             }])
-            ->with('evaluations');
+            ->with(['evaluations', 'project']);
     }
 
     public static function getPages(): array
     {
         return [
             'index' => Pages\ListProjectModules::route('/'),
+            'create' => Pages\CreateProjectModule::route('/create'),
+            'edit' => Pages\EditProjectModule::route('/{record}/edit'),
         ];
     }
 }
