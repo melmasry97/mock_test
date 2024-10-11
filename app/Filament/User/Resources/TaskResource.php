@@ -82,11 +82,11 @@ class TaskResource extends Resource
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\Action::make('addMetrics')
-                    ->label('Add Metrics')
-                    ->icon('heroicon-o-plus-circle')
-                    ->modalHeading('Add Metrics to Task')
-                    ->modalSubmitActionLabel('Save Metrics')
-                    ->modalIcon('heroicon-o-plus-circle')
+                    ->label('Evaluate')
+                    ->icon('heroicon-o-star')
+                    ->modalHeading(fn (Task $record): string => "Evaluate: {$record->name}")
+                    ->modalSubmitActionLabel('Save Evaluation')
+                    ->modalIcon('heroicon-o-star')
                     ->form([
                         Forms\Components\Section::make('Module Information')
                             ->schema([

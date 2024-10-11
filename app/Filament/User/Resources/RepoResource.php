@@ -80,7 +80,7 @@ class RepoResource extends Resource
                 Tables\Actions\Action::make('evaluate')
                     ->label('Evaluate')
                     ->icon('heroicon-o-star')
-                    ->modalHeading('Evaluate Repo')
+                    ->modalHeading(fn (Task $record): string => "Evaluate: {$record->name}")
                     ->modalSubmitActionLabel('Save Evaluation')
                     ->modalIcon('heroicon-o-star')
                     ->form([
@@ -116,18 +116,18 @@ class RepoResource extends Resource
                                             ->required(),
                                     ]),
                             ]),
-                        Forms\Components\Section::make('ISO Weight')
-                            ->schema([
-                                Forms\Components\Grid::make(3)
-                                    ->schema(
-                                        IsoTask::take(9)->get()->map(function ($isoTask) {
-                                            return Forms\Components\Select::make("matrix_values.{$isoTask->id}")
-                                                ->label($isoTask->name)
-                                                ->options([0 => 0, 1 => 1, 2 => 2, 3 => 3, 5 => 5])
-                                                ->required()
-                                                ->extraAttributes(['class' => 'text-center']);
-                                        })->toArray()
-                                    ),
+                        Forms\Components\Section::make('ISO QAs Weight')
+                        ->schema([
+                            Forms\Components\Grid::make(3)
+                                ->schema(
+                                    IsoTask::take(9)->get()->map(function ($isoTask) {
+                                        return Forms\Components\Select::make("matrix_values.{$isoTask->id}")
+                                            ->label($isoTask->name)
+                                            ->options([0 => 0, 1 => 1, 2 => 2, 3 => 3, 5 => 5])
+                                            ->required()
+                                            ->extraAttributes(['class' => 'text-center']);
+                                    })->toArray()
+                                ),
                             ]),
                     ])
                     ->action(function (Task $record, array $data) {
@@ -157,22 +157,23 @@ class RepoResource extends Resource
                             $record->metrics()->save($metric);
                             $record->update(['state' => TaskState::DONE]);
 
-                            // Check if end date has been reached or if there's no end date
-                            if (!$record->end_date || Carbon::now()->gte($record->end_date)) {
-                                $latestMetric = $record->metrics()->latest()->first();
-                                if ($latestMetric) {
-                                    $newWeight = $record->projectModule->weight * $latestMetric->calculated_value * $latestMetric->matrix_calculated_value;
-                                    $record->update(['weight' => $newWeight]);
-                                }
-                            }
+                            // Calculate average of user evaluations
+                            $averageEvaluation = $record->metrics()->avg('calculated_value');
+                            $userCount = $record->metrics()->count();
 
-                            Log::info('Metric saved and weight updated for task: ' . $record->id);
+                            // Update the task with the new average
+                            $record->update([
+                                'average_evaluation' => $averageEvaluation,
+                                'evaluation_count' => $userCount,
+                            ]);
+
+                            Log::info('Metric saved and average updated for task: ' . $record->id);
                         });
 
                         Notification::make()
                             ->success()
-                            ->title('Metrics added successfully')
-                            ->body('The metrics have been added, the task has been marked as done, and the weight has been updated if applicable.')
+                            ->title('Evaluation added successfully')
+                            ->body('Your evaluation has been added and the task average has been updated.')
                             ->send();
                     })
                     ->visible(function (Task $record) {

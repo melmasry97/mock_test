@@ -19,6 +19,8 @@ class IsoTaskResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
 
+    protected static ?string $navigationLabel = 'ISO QAs';
+
     public static function form(Form $form): Form
     {
         return $form
@@ -30,8 +32,8 @@ class IsoTaskResource extends Resource
                 Forms\Components\TextInput::make('weight')
                     ->required()
                     ->numeric()
-                    ->minValue(0)
-                    ->maxValue(100)
+                    ->step(0.1)
+                    ->rules(['numeric', 'min:-100', 'max:100']) // Validation rules for min and max
                     ->disabled(),
                 Forms\Components\Textarea::make('description')
                     ->maxLength(65535)
@@ -93,15 +95,11 @@ class IsoTaskResource extends Resource
                     ->modalSubmitActionLabel('Save Evaluation')
                     ->modalIcon('heroicon-o-star')
                     ->form([
-                        Forms\Components\Select::make('weight')
-                            ->options([
-                                0 => '0',
-                                1 => '1',
-                                2 => '2',
-                                3 => '3',
-                                5 => '5',
-                            ])
-                            ->required(),
+                        Forms\Components\TextInput::make('weight') // Changed from Select to TextInput
+                            ->required()
+                            ->numeric() // Ensure it accepts numeric values
+                            ->step(0.1) // Allow decimal input
+                            ->rules(['numeric', 'min:-100', 'max:100']), // Validation rules for min and max
                     ])
                     ->action(function (IsoTask $record, array $data): void {
                         // Calculate the user's evaluation based on the provided formula

@@ -19,6 +19,8 @@ class IsoTaskResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
 
+    protected static ?string $navigationLabel = 'ISO QAs';
+
     public static function form(Form $form): Form
     {
         return $form

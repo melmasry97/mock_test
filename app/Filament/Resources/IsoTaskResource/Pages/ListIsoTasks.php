@@ -25,4 +25,9 @@ class ListIsoTasks extends ListRecords
             IsoTaskStatsWidget::class,
         ];
     }
+
+    public function getTitle(): string
+    {
+        return 'ISO QAs';
+    }
 }
