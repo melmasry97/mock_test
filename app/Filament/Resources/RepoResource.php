@@ -54,21 +54,22 @@ class RepoResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')
-                    ->searchable()
+                Tables\Columns\TextColumn::make('id')
+                    ->label('Task ID')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('description')
-                    ->limit(50),
-                Tables\Columns\TextColumn::make('state')
-                    ->formatStateUsing(fn (TaskState $state): string => TaskState::getLabels()[$state->value])
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('weight')
-                    ->label('Weight (%)')
-                    ->numeric()
+                Tables\Columns\TextColumn::make('projectModule.project.name')
+                    ->label('Project Name')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('projectModule.name')
                     ->label('Project Module')
                     ->sortable(),
+                Tables\Columns\TextColumn::make('name')
+                    ->label('Task Name')
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('description')
+                    ->label('Task Description')
+                    ->limit(50),
             ])
             ->filters([
                 //
