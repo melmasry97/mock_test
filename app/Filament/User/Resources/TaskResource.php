@@ -76,26 +76,41 @@ class TaskResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\Action::make('Add Metrics')
+                Tables\Actions\Action::make('evaluate')
+                    ->label('Evaluate')
+                    ->icon('heroicon-o-star')
+                    ->modalHeading('Evaluate Task')
+                    ->modalSubmitActionLabel('Save Evaluation')
+                    ->modalIcon('heroicon-o-star')
                     ->form([
-                        Forms\Components\Section::make('Score Weight')
+                        Forms\Components\Section::make('Module Information')
+                            ->schema([
+                                Forms\Components\TextInput::make('module_weight')
+                                    ->label('Module Weight')
+                                    ->disabled()
+                                    ->dehydrated(false)
+                                    ->default(function (Task $record) {
+                                        return $record->projectModule->weight ?? 'N/A';
+                                    }),
+                            ]),
+                        Forms\Components\Section::make('RICE Weight')
                             ->schema([
                                 Forms\Components\Grid::make(4)
                                     ->schema([
                                         Forms\Components\Select::make('input1')
-                                            ->label('Input 1')
+                                            ->label('R (Reach)')
                                             ->options([1 => 1, 3 => 3, 4 => 4, 6 => 6, 8 => 8, 10 => 10])
                                             ->required(),
                                         Forms\Components\Select::make('input2')
-                                            ->label('Input 2')
+                                            ->label('I (Impact)')
                                             ->options([1 => 1, 3 => 3, 4 => 4, 6 => 6, 8 => 8, 10 => 10])
                                             ->required(),
                                         Forms\Components\Select::make('input3')
-                                            ->label('Input 3')
+                                            ->label('C (Confidence)')
                                             ->options([1 => 1, 3 => 3, 4 => 4, 6 => 6, 8 => 8, 10 => 10])
                                             ->required(),
                                         Forms\Components\Select::make('input4')
-                                            ->label('Input 4')
+                                            ->label('E (Effort)')
                                             ->options([1 => 1, 3 => 3, 5 => 5, 7 => 7, 10 => 10])
                                             ->required(),
                                     ]),
@@ -146,17 +161,16 @@ class TaskResource extends Resource
 
                         Notification::make()
                             ->success()
-                            ->title('Metrics added successfully')
-                            ->body('The metrics have been added and the task has been marked as done.')
+                            ->title('Evaluation added successfully')
+                            ->body('The evaluation has been added and the task has been marked as done.')
                             ->send();
                     })
                     ->visible(function (Task $record) {
                         $isStateValid = $record->state === TaskState::REPO || $record->state === TaskState::IN_PROGRESS;
-                        $isBeforeEndDate = !$record->end_date || Carbon::now()->lte($record->end_date);
-                        return $isStateValid && $isBeforeEndDate;
-                    })
-                    ->modalHeading('Add Metrics for Task')
-                    ->modalButton('Submit'),
+                        $isBeforeEndDate = !$record->end_date || Carbon::now()->lt($record->end_date);
+                        $userHasNotEvaluated = !$record->metrics()->where('user_id', auth()->id())->exists();
+                        return $isStateValid && $isBeforeEndDate && $userHasNotEvaluated;
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),
