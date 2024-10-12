@@ -72,6 +72,10 @@ class BacklogResource extends Resource
                 Tables\Columns\TextColumn::make('description')
                     ->label('Task Description')
                     ->limit(50),
+                Tables\Columns\TextColumn::make('weight')
+                    ->label('Weight')
+                    ->sortable()
+                    ->formatStateUsing(fn ($state) => number_format($state, 2) . '%'),
             ])
             ->filters([
                 //

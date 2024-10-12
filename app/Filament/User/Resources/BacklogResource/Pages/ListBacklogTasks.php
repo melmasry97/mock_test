@@ -3,8 +3,8 @@
 namespace App\Filament\User\Resources\BacklogResource\Pages;
 
 use App\Filament\User\Resources\BacklogResource;
-use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
+use App\Jobs\CalculateTaskWeight;
 
 class ListBacklogTasks extends ListRecords
 {
@@ -13,7 +13,13 @@ class ListBacklogTasks extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            // Add any header actions if needed
         ];
+    }
+
+    protected function beforeFill(): void
+    {
+        // Run the CalculateTaskWeight job synchronously
+        (new CalculateTaskWeight())->handle();
     }
 }
