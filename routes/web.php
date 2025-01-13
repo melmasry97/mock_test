@@ -22,4 +22,3 @@ Route::middleware('auth')->group(function () {
 Route::resource('tasks', TaskController::class);
 Route::get('tasks/{task}/metrics/create', [MetricController::class, 'create'])->name('tasks.metrics.create');
 Route::post('tasks/{task}/metrics', [MetricController::class, 'store'])->name('tasks.metrics.store');
-

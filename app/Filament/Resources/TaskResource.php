@@ -2,43 +2,178 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Forms;
-use App\Models\Task;
-use Filament\Tables;
-use App\Models\Metric;
-use App\Models\IsoTask;
 use App\Enums\TaskState;
-use App\Models\ProjectModule;
-use Filament\Resources\Resource;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Filament\Notifications\Notification;
 use App\Filament\Resources\TaskResource\Pages;
+use App\Models\Task;
+use App\Models\TypeCategory;
+use App\Models\Project;
+use App\Models\ProjectModule;
+use App\Models\Source;
+use Filament\Forms;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Illuminate\Database\Eloquent\Builder;
 
 class TaskResource extends Resource
 {
     protected static ?string $model = Task::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-clipboard'; // Changed this line
+    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     public static function form(Forms\Form $form): Forms\Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name')
-                    ->required()
-                    ->maxLength(255),
+                Forms\Components\Grid::make(2)
+                    ->schema([
+                        Forms\Components\TextInput::make('name')
+                            ->required()
+                            ->maxLength(255),
+
+                        Forms\Components\Select::make('state')
+                            ->options(TaskState::getLabels())
+                            ->required()
+                            ->enum(TaskState::class),
+                    ]),
+
                 Forms\Components\Textarea::make('description')
-                    ->maxLength(65535),
-                Forms\Components\Select::make('state')
-                    ->options(TaskState::getLabels())
-                    ->enum(TaskState::class)
-                    ->required(),
-                Forms\Components\Select::make('project_module_id')
-                    ->label('Project Module')
-                    ->options(ProjectModule::all()->pluck('name', 'id'))
+                    ->maxLength(65535)
+                    ->columnSpanFull(),
+
+                Forms\Components\Grid::make(2)
+                    ->schema([
+                        Forms\Components\Select::make('project_id')
+                            ->label('Project')
+                            ->options(Project::pluck('name', 'id'))
+                            ->searchable()
+                            ->preload()
+                            ->live()
+                            ->required()
+                            ->afterStateUpdated(fn (callable $set) => $set('project_module_id', null)),
+
+                        Forms\Components\Select::make('project_module_id')
+                            ->label('Project Module')
+                            ->options(function (callable $get) {
+                                $projectId = $get('project_id');
+                                if (!$projectId) {
+                                    return [];
+                                }
+                                return ProjectModule::where('project_id', $projectId)
+                                    ->pluck('name', 'id');
+                            })
+                            ->searchable()
+                            ->preload()
+                            ->required()
+                            ->live()
+                            ->disabled(fn (callable $get) => !$get('project_id')),
+                    ]),
+
+                Forms\Components\Grid::make(2)
+                    ->schema([
+                        Forms\Components\Select::make('source_group_id')
+                            ->relationship('sourceGroup', 'group_name')
+                            ->searchable()
+                            ->preload()
+                            ->live()
+                            ->afterStateUpdated(fn (callable $set) => $set('source_id', null)),
+
+                        Forms\Components\Select::make('source_id')
+                            ->options(function (callable $get) {
+                                $groupId = $get('source_group_id');
+                                if (!$groupId) {
+                                    return [];
+                                }
+                                return Source::where('group_id', $groupId)
+                                    ->pluck('source_name', 'source_id');
+                            })
+                            ->searchable()
+                            ->preload()
+                            ->live()
+                            ->disabled(fn (callable $get) => !$get('source_group_id')),
+                    ]),
+
+                Forms\Components\Grid::make(2)
+                    ->schema([
+                        Forms\Components\Select::make('type_id')
+                            ->relationship('type', 'type_name')
+                            ->searchable()
+                            ->preload(),
+
+                        Forms\Components\Select::make('status')
+                            ->options([
+                                'pending' => 'Pending',
+                                'approved' => 'Approved',
+                                'evaluating' => 'Evaluating',
+                                'completed' => 'Completed',
+                            ])
+                            ->default('pending'),
+                    ]),
+
+                Forms\Components\Section::make('RICE Weight')
+                    ->schema([
+                        Forms\Components\Grid::make(4)
+                            ->schema([
+                                Forms\Components\Select::make('reach')
+                                    ->label('Reach (R)')
+                                    ->options([1 => 1, 3 => 3, 4 => 4, 6 => 6, 8 => 8, 10 => 10])
+                                    ->required()
+                                    ->afterStateUpdated(function ($state, $set, $get) {
+                                        $rice_score = ($state * $get('impact') * $get('confidence')) / ($get('effort') ?: 1);
+                                        $set('rice_score', round($rice_score, 2));
+                                    }),
+
+                                Forms\Components\Select::make('impact')
+                                    ->label('Impact (I)')
+                                    ->options([1 => 1, 3 => 3, 4 => 4, 6 => 6, 8 => 8, 10 => 10])
+                                    ->required()
+                                    ->afterStateUpdated(function ($state, $set, $get) {
+                                        $rice_score = ($get('reach') * $state * $get('confidence')) / ($get('effort') ?: 1);
+                                        $set('rice_score', round($rice_score, 2));
+                                    }),
+
+                                Forms\Components\Select::make('confidence')
+                                    ->label('Confidence (C)')
+                                    ->options([1 => 1, 3 => 3, 4 => 4, 6 => 6, 8 => 8, 10 => 10])
+                                    ->required()
+                                    ->afterStateUpdated(function ($state, $set, $get) {
+                                        $rice_score = ($get('reach') * $get('impact') * $state) / ($get('effort') ?: 1);
+                                        $set('rice_score', round($rice_score, 2));
+                                    }),
+
+                                Forms\Components\Select::make('effort')
+                                    ->label('Effort (E)')
+                                    ->options([1 => 1, 3 => 3, 5 => 5, 7 => 7, 10 => 10])
+                                    ->required()
+                                    ->afterStateUpdated(function ($state, $set, $get) {
+                                        $rice_score = ($get('reach') * $get('impact') * $get('confidence')) / ($state ?: 1);
+                                        $set('rice_score', round($rice_score, 2));
+                                    }),
+                            ]),
+
+                        Forms\Components\TextInput::make('rice_score')
+                            ->label('RICE Score')
+                            ->disabled()
+                            ->dehydrated(),
+                    ]),
+
+                Forms\Components\Select::make('categories')
+                    ->relationship(
+                        'categories',
+                        'category_name',
+                        fn ($query) => $query->where('evaluation_average_value', '>', 0)
+                    )
+                    ->multiple()
+                    ->preload()
                     ->searchable()
-                    ->required(),
+                    ->label('Type Categories')
+                    ->helperText('Select from evaluated categories only'),
+
+                Forms\Components\TextInput::make('task_evaluation_time_period')
+                    ->numeric()
+                    ->nullable(),
+
+                Forms\Components\DateTimePicker::make('evaluation_end_time')
+                    ->nullable(),
             ]);
     }
 
@@ -46,46 +181,90 @@ class TaskResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('id')
-                    ->label('Task ID')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('projectModule.project.name')
-                    ->label('Project Name')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('projectModule.name')
-                    ->label('Project Module')
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('name')
-                    ->label('Task Name')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('description')
-                    ->label('Task Description')
-                    ->limit(50),
+
                 Tables\Columns\TextColumn::make('state')
-                    ->formatStateUsing(fn (TaskState $state): string => TaskState::getLabels()[$state->value])
-                    ->sortable(),
+                    ->badge()
+                    ->color(fn (TaskState $state): string => match ($state) {
+                        TaskState::REPO => 'gray',
+                        TaskState::TODO => 'warning',
+                        TaskState::IN_PROGRESS => 'info',
+                        TaskState::DONE => 'success',
+                    }),
+
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'pending' => 'gray',
+                        'approved' => 'warning',
+                        'evaluating' => 'info',
+                        'completed' => 'success',
+                        default => 'gray',
+                    }),
+
+                Tables\Columns\TextColumn::make('project.name')
+                    ->searchable()
+                    ->sortable()
+                    ->label('Project'),
+
+                Tables\Columns\TextColumn::make('projectModule.name')
+                    ->searchable()
+                    ->sortable()
+                    ->label('Module'),
+
+                Tables\Columns\TextColumn::make('sourceGroup.group_name')
+                    ->searchable()
+                    ->sortable()
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('source.source_name')
+                    ->searchable()
+                    ->sortable()
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('type.type_name')
+                    ->searchable()
+                    ->sortable()
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('rice_score')
+                    ->numeric(2)
+                    ->sortable()
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('overall_evaluation_value')
+                    ->numeric(2)
+                    ->sortable()
+                    ->toggleable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('state')
+                    ->options(TaskState::getLabels()),
+                Tables\Filters\SelectFilter::make('status')
                     ->options([
-                        'all' => 'All Tasks',
-                        TaskState::REPO->value => 'Repo Tasks',
-                        TaskState::DONE->value => 'Done Tasks',
-                    ])
-                    ->default('all')
-                    ->query(function ($query, array $data) {
-                        if ($data['value'] === 'all') {
-                            return $query;
-                        }
-                        return $query->where('state', $data['value']);
-                    }),
+                        'pending' => 'Pending',
+                        'approved' => 'Approved',
+                        'evaluating' => 'Evaluating',
+                        'completed' => 'Completed',
+                    ]),
+                Tables\Filters\SelectFilter::make('project')
+                    ->relationship('project', 'name'),
+                Tables\Filters\SelectFilter::make('source_group')
+                    ->relationship('sourceGroup', 'group_name'),
+                Tables\Filters\SelectFilter::make('source')
+                    ->relationship('source', 'source_name'),
+                Tables\Filters\SelectFilter::make('type')
+                    ->relationship('type', 'type_name'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
             ]);
     }
 

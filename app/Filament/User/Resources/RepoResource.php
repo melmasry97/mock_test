@@ -116,69 +116,47 @@ class RepoResource extends Resource
                                             ->required(),
                                     ]),
                             ]),
-                        Forms\Components\Section::make('ISO QAs Weight')
-                        ->schema([
-                            Forms\Components\Grid::make(3)
-                                ->schema(
-                                    IsoTask::take(9)->get()->map(function ($isoTask) {
-                                        return Forms\Components\Select::make("matrix_values.{$isoTask->id}")
-                                            ->label($isoTask->name)
-                                            ->options([0 => 0, 1 => 1, 2 => 2, 3 => 3, 5 => 5])
-                                            ->required()
-                                            ->extraAttributes(['class' => 'text-center']);
-                                    })->toArray()
-                                ),
-                            ]),
+                        Forms\Components\Section::make('Evaluation')
+                            ->schema([
+                                Forms\Components\Select::make('fibonacci_weight')
+                                    ->label('Fibonacci Weight')
+                                    ->options([
+                                        1 => '1 - Very Low',
+                                        2 => '2 - Low',
+                                        3 => '3 - Low Medium',
+                                        5 => '5 - Medium',
+                                        8 => '8 - Medium High',
+                                        13 => '13 - High',
+                                        21 => '21 - Very High'
+                                    ])
+                                    ->required()
+                                    ->helperText('Choose a Fibonacci number to evaluate this task'),
+                            ])
                     ])
                     ->action(function (Task $record, array $data) {
                         DB::transaction(function () use ($record, $data) {
-                            $calculatedValue = ($data['input1'] * $data['input2'] * $data['input3']) / $data['input4'];
-
-                            // Calculate matrix_calculated_value
-                            $matrixCalculatedValue = 0;
-                            foreach ($data['matrix_values'] as $isoTaskId => $value) {
-                                $isoTask = IsoTask::find($isoTaskId);
-                                $matrixCalculatedValue += ($isoTask->weight / 100) * $value; // Convert weight to decimal
-                            }
-
-                            $metric = new Metric([
+                            $taskEvaluation = new TaskEvaluation([
                                 'task_id' => $record->id,
                                 'user_id' => auth()->id(),
-                                'module_weight' => $record->projectModule->weight,
-                                'input1' => $data['input1'],
-                                'input2' => $data['input2'],
-                                'input3' => $data['input3'],
-                                'input4' => $data['input4'],
-                                'calculated_value' => $calculatedValue,
-                                'matrix_values' => $data['matrix_values'],
-                                'matrix_calculated_value' => $matrixCalculatedValue,
+                                'fibonacci_weight' => $data['fibonacci_weight'],
                             ]);
 
-                            $record->metrics()->save($metric);
+                            $taskEvaluation->save();
+                            $record->calculateOverallEvaluation();
                             $record->update(['state' => TaskState::DONE]);
 
-                            // Calculate average of user evaluations
-                            $averageEvaluation = $record->metrics()->avg('calculated_value');
-                            $userCount = $record->metrics()->count();
-
-                            // Update the task with the new average
-                            $record->update([
-                                'average_evaluation' => $averageEvaluation,
-                                'evaluation_count' => $userCount,
-                            ]);
-
-                            Log::info('Metric saved and average updated for task: ' . $record->id);
+                            Log::info('Task evaluation saved for task: ' . $record->id);
                         });
 
                         Notification::make()
                             ->success()
                             ->title('Evaluation added successfully')
-                            ->body('Your evaluation has been added and the task average has been updated.')
+                            ->body('Your evaluation has been added and the task has been updated.')
                             ->send();
                     })
                     ->visible(function (Task $record) {
                         $isBeforeEndDate = $record->end_date ? Carbon::now()->lt($record->end_date) : true;
-                        $userHasNotEvaluated = !$record->metrics()->where('user_id', Auth::id())->exists();
+                        $userHasNotEvaluated = !$record->evaluations()->where('user_id', Auth::id())->exists();
                         return $isBeforeEndDate && $userHasNotEvaluated;
                     }),
             ])
