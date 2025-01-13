@@ -42,22 +42,22 @@ class TypeCategoryEvaluationResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('type.type_name')
+                Tables\Columns\TextColumn::make('type.name')
                     ->searchable()
                     ->sortable()
                     ->label('Type'),
 
-                Tables\Columns\TextColumn::make('category_name')
+                Tables\Columns\TextColumn::make('name')
                     ->searchable()
                     ->sortable()
                     ->label('Category Name'),
 
-                Tables\Columns\TextColumn::make('category_description')
+                Tables\Columns\TextColumn::make('description')
                     ->searchable()
                     ->limit(50)
                     ->label('Description'),
 
-                Tables\Columns\TextColumn::make('evaluation_time_period')
+                Tables\Columns\TextColumn::make('time_period')
                     ->numeric()
                     ->sortable()
                     ->label('Time Period (days)'),
@@ -65,14 +65,14 @@ class TypeCategoryEvaluationResource extends Resource
                 Tables\Columns\TextColumn::make('remaining_time')
                     ->label('Time Remaining'),
 
-                Tables\Columns\TextColumn::make('evaluation_average_value')
+                Tables\Columns\TextColumn::make('average_value')
                     ->numeric(2)
                     ->sortable()
                     ->label('Current Average'),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('type')
-                    ->relationship('type', 'type_name')
+                    ->relationship('type', 'name')
                     ->searchable()
                     ->preload()
                     ->label('Type'),
@@ -113,7 +113,7 @@ class TypeCategoryEvaluationResource extends Resource
                 ->whereDoesntHave('evaluations', function ($query) {
                     $query->where('user_id', Auth::id());
                 })
-                ->where('created_at', '>', now()->subDays(TypeCategory::max('evaluation_time_period')))
+                ->where('created_at', '>', now()->subDays(TypeCategory::max('time_period')))
             );
     }
 
