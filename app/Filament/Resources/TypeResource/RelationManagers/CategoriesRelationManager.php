@@ -1,41 +1,23 @@
 <?php
 
-namespace App\Filament\Resources;
+namespace App\Filament\Resources\TypeResource\RelationManagers;
 
-use App\Filament\Resources\TypeCategoryResource\Pages;
-use App\Models\TypeCategory;
 use Filament\Forms;
-use Filament\Resources\Resource;
+use Filament\Forms\Form;
+use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
+use Filament\Tables\Table;
 
-class TypeCategoryResource extends Resource
+class CategoriesRelationManager extends RelationManager
 {
-    protected static ?string $model = TypeCategory::class;
+    protected static string $relationship = 'categories';
 
-    protected static ?string $navigationIcon = 'heroicon-o-squares-2x2';
+    protected static ?string $title = 'Type Categories';
 
-    protected static ?string $navigationGroup = 'Type Management';
-
-    protected static ?int $navigationSort = 2;
-
-    public static function form(Forms\Form $form): Forms\Form
+    public function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('type_id')
-                    ->relationship('type', 'name')
-                    ->required()
-                    ->searchable()
-                    ->preload()
-                    ->createOptionForm([
-                        Forms\Components\TextInput::make('name')
-                            ->required()
-                            ->maxLength(255),
-                        Forms\Components\Textarea::make('description')
-                            ->maxLength(65535),
-                    ])
-                    ->label('Type'),
-
                 Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255)
@@ -68,19 +50,15 @@ class TypeCategoryResource extends Resource
             ]);
     }
 
-    public static function table(Tables\Table $table): Tables\Table
+    public function table(Table $table): Table
     {
         return $table
+            ->recordTitleAttribute('name')
             ->columns([
-                Tables\Columns\TextColumn::make('type.name')
-                    ->sortable()
-                    ->searchable()
-                    ->label('Type'),
-
                 Tables\Columns\TextColumn::make('name')
-                    ->sortable()
+                    ->label('Category Name')
                     ->searchable()
-                    ->label('Category Name'),
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('description')
                     ->limit(50)
@@ -97,7 +75,8 @@ class TypeCategoryResource extends Resource
 
                 Tables\Columns\TextColumn::make('average_value')
                     ->numeric(2)
-                    ->sortable(),
+                    ->sortable()
+                    ->label('Average Value'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
@@ -105,16 +84,15 @@ class TypeCategoryResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('type')
-                    ->relationship('type', 'name')
-                    ->searchable()
-                    ->preload()
-                    ->label('Type'),
+                //
+            ])
+            ->headerActions([
+                Tables\Actions\CreateAction::make(),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make()
-                    ->before(function (TypeCategory $record) {
+                    ->before(function ($record) {
                         if ($record->tasks()->count() > 0) {
                             throw new \Exception('Cannot delete category that has associated tasks.');
                         }
@@ -132,21 +110,5 @@ class TypeCategoryResource extends Resource
                         }),
                 ]),
             ]);
-    }
-
-    public static function getRelations(): array
-    {
-        return [
-            //
-        ];
-    }
-
-    public static function getPages(): array
-    {
-        return [
-            'index' => Pages\ListTypeCategories::route('/'),
-            'create' => Pages\CreateTypeCategory::route('/create'),
-            'edit' => Pages\EditTypeCategory::route('/{record}/edit'),
-        ];
     }
 }

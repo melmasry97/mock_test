@@ -15,7 +15,7 @@ class TypeCategoryEvaluation extends Model
 
     public function typeCategory(): BelongsTo
     {
-        return $this->belongsTo(TypeCategory::class, 'type_category_id', 'category_id');
+        return $this->belongsTo(TypeCategory::class, 'type_category_id');
     }
 
     public function user(): BelongsTo

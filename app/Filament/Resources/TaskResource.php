@@ -40,6 +40,7 @@ class TaskResource extends Resource
                     ->maxLength(65535)
                     ->columnSpanFull(),
 
+                // Project Section
                 Forms\Components\Grid::make(2)
                     ->schema([
                         Forms\Components\Select::make('project_id')
@@ -68,13 +69,15 @@ class TaskResource extends Resource
                             ->disabled(fn (callable $get) => !$get('project_id')),
                     ]),
 
+                // Source Section
                 Forms\Components\Grid::make(2)
                     ->schema([
                         Forms\Components\Select::make('source_group_id')
-                            ->relationship('sourceGroup', 'group_name')
+                            ->relationship('sourceGroup', 'name')
                             ->searchable()
                             ->preload()
                             ->live()
+                            ->label('Source Group')
                             ->afterStateUpdated(fn (callable $set) => $set('source_id', null)),
 
                         Forms\Components\Select::make('source_id')
@@ -83,21 +86,48 @@ class TaskResource extends Resource
                                 if (!$groupId) {
                                     return [];
                                 }
-                                return Source::where('group_id', $groupId)
-                                    ->pluck('source_name', 'source_id');
+                                return Source::where('source_group_id', $groupId)
+                                    ->pluck('name', 'id');
                             })
                             ->searchable()
                             ->preload()
                             ->live()
+                            ->label('Source')
                             ->disabled(fn (callable $get) => !$get('source_group_id')),
                     ]),
 
-                Forms\Components\Grid::make(2)
+                // Type and Status Section
+                Forms\Components\Grid::make(3)
                     ->schema([
                         Forms\Components\Select::make('type_id')
-                            ->relationship('type', 'type_name')
+                            ->relationship('type', 'name')
                             ->searchable()
-                            ->preload(),
+                            ->preload()
+                            ->live()
+                            ->label('Type')
+                            ->afterStateUpdated(fn (callable $set) => $set('categories', [])),
+
+                        Forms\Components\Select::make('categories')
+                            ->relationship(
+                                'categories',
+                                'name',
+                                function (Builder $query, callable $get) {
+                                    $typeId = $get('type_id');
+                                    $query->where('average_value', '>', 0);
+
+                                    if ($typeId) {
+                                        $query->where('type_id', $typeId);
+                                    }
+
+                                    return $query;
+                                }
+                            )
+                            ->multiple()
+                            ->preload()
+                            ->searchable()
+                            ->label('Type Categories')
+                            ->helperText('Select from evaluated categories only')
+                            ->disabled(fn (callable $get) => !$get('type_id')),
 
                         Forms\Components\Select::make('status')
                             ->options([
@@ -109,7 +139,21 @@ class TaskResource extends Resource
                             ->default('pending'),
                     ]),
 
+                Forms\Components\Grid::make(2)
+                    ->schema([
+                        Forms\Components\TextInput::make('task_evaluation_time_period')
+                            ->numeric()
+                            ->label('Evaluation Time Period (days)')
+                            ->nullable(),
+
+                        Forms\Components\DateTimePicker::make('evaluation_end_time')
+                            ->label('Evaluation End Time')
+                            ->nullable(),
+                    ]),
+
+                // RICE Section at the end
                 Forms\Components\Section::make('RICE Weight')
+                    ->collapsible()
                     ->schema([
                         Forms\Components\Grid::make(4)
                             ->schema([
@@ -155,25 +199,6 @@ class TaskResource extends Resource
                             ->disabled()
                             ->dehydrated(),
                     ]),
-
-                Forms\Components\Select::make('categories')
-                    ->relationship(
-                        'categories',
-                        'category_name',
-                        fn ($query) => $query->where('evaluation_average_value', '>', 0)
-                    )
-                    ->multiple()
-                    ->preload()
-                    ->searchable()
-                    ->label('Type Categories')
-                    ->helperText('Select from evaluated categories only'),
-
-                Forms\Components\TextInput::make('task_evaluation_time_period')
-                    ->numeric()
-                    ->nullable(),
-
-                Forms\Components\DateTimePicker::make('evaluation_end_time')
-                    ->nullable(),
             ]);
     }
 
@@ -214,17 +239,17 @@ class TaskResource extends Resource
                     ->sortable()
                     ->label('Module'),
 
-                Tables\Columns\TextColumn::make('sourceGroup.group_name')
+                Tables\Columns\TextColumn::make('sourceGroup.name')
                     ->searchable()
                     ->sortable()
                     ->toggleable(),
 
-                Tables\Columns\TextColumn::make('source.source_name')
+                Tables\Columns\TextColumn::make('source.name')
                     ->searchable()
                     ->sortable()
                     ->toggleable(),
 
-                Tables\Columns\TextColumn::make('type.type_name')
+                Tables\Columns\TextColumn::make('type.name')
                     ->searchable()
                     ->sortable()
                     ->toggleable(),
@@ -252,11 +277,11 @@ class TaskResource extends Resource
                 Tables\Filters\SelectFilter::make('project')
                     ->relationship('project', 'name'),
                 Tables\Filters\SelectFilter::make('source_group')
-                    ->relationship('sourceGroup', 'group_name'),
+                    ->relationship('sourceGroup', 'name'),
                 Tables\Filters\SelectFilter::make('source')
-                    ->relationship('source', 'source_name'),
+                    ->relationship('source', 'name'),
                 Tables\Filters\SelectFilter::make('type')
-                    ->relationship('type', 'type_name'),
+                    ->relationship('type', 'name'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

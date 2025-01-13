@@ -11,27 +11,27 @@ use Carbon\Carbon;
 
 class TypeCategory extends Model
 {
-    protected $primaryKey = 'category_id';
+    protected $table = 'type_categories';
 
     protected $fillable = [
-        'category_name',
-        'category_description',
-        'evaluation_time_period',
-        'evaluation_value',
-        'evaluation_average_value',
+        'name',
+        'description',
+        'time_period',
+        'value',
+        'average_value',
         'type_id',
     ];
 
     protected $casts = [
-        'evaluation_value' => 'decimal:2',
-        'evaluation_average_value' => 'decimal:2',
+        'value' => 'decimal:2',
+        'average_value' => 'decimal:2',
     ];
 
     protected $appends = ['remaining_time'];
 
     public function type(): BelongsTo
     {
-        return $this->belongsTo(Type::class, 'type_id');
+        return $this->belongsTo(Type::class);
     }
 
     public function tasks(): BelongsToMany
@@ -42,14 +42,14 @@ class TypeCategory extends Model
 
     public function evaluations(): HasMany
     {
-        return $this->hasMany(TypeCategoryEvaluation::class, 'type_category_id', 'category_id');
+        return $this->hasMany(TypeCategoryEvaluation::class, 'type_category_id');
     }
 
     public function canBeEvaluated(): bool
     {
         // Check if the evaluation period has ended
         $createdAt = Carbon::parse($this->created_at);
-        $evaluationEndTime = $createdAt->addDays($this->evaluation_time_period);
+        $evaluationEndTime = $createdAt->addDays($this->time_period);
 
         if (Carbon::now()->isAfter($evaluationEndTime)) {
             return false;
@@ -67,7 +67,7 @@ class TypeCategory extends Model
 
     public function getEvaluationEndTime(): Carbon
     {
-        return Carbon::parse($this->created_at)->addDays($this->evaluation_time_period);
+        return Carbon::parse($this->created_at)->addDays($this->time_period);
     }
 
     public function getRemainingTimeAttribute(): string
@@ -81,7 +81,7 @@ class TypeCategory extends Model
 
     public function calculateAverageEvaluation(): void
     {
-        $this->evaluation_average_value = $this->evaluations()->avg('fibonacci_weight') ?? 0;
+        $this->average_value = $this->evaluations()->avg('fibonacci_weight') ?? 0;
         $this->save();
     }
 }

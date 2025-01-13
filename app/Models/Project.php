@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Project extends Model
 {
@@ -14,20 +15,19 @@ class Project extends Model
         'name',
         'description',
         'weight',
+        'category_id'
     ];
 
     protected $casts = [
         'weight' => 'float',
     ];
 
-    protected $guarded = [];
-
-    public function category()
+    public function category(): BelongsTo
     {
-        return $this->belongsTo(Category::class);
+        return $this->belongsTo(Category::class, 'category_id');
     }
 
-    public function modules()
+    public function modules(): HasMany
     {
         return $this->hasMany(ProjectModule::class);
     }
@@ -35,5 +35,10 @@ class Project extends Model
     public function isoTasks(): HasMany
     {
         return $this->hasMany(IsoTask::class);
+    }
+
+    public function tasks(): HasMany
+    {
+        return $this->hasMany(Task::class);
     }
 }

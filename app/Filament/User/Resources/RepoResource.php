@@ -93,28 +93,13 @@ class RepoResource extends Resource
                                     ->default(function (Task $record) {
                                         return $record->projectModule->weight ?? 'N/A';
                                     }),
-                            ]),
-                        Forms\Components\Section::make('RICE Weight')
-                            ->schema([
-                                Forms\Components\Grid::make(4)
-                                    ->schema([
-                                        Forms\Components\Select::make('input1')
-                                            ->label('Reach (R)')
-                                            ->options([1 => 1, 3 => 3, 4 => 4, 6 => 6, 8 => 8, 10 => 10])
-                                            ->required(),
-                                        Forms\Components\Select::make('input2')
-                                            ->label('Impact (I)')
-                                            ->options([1 => 1, 3 => 3, 4 => 4, 6 => 6, 8 => 8, 10 => 10])
-                                            ->required(),
-                                        Forms\Components\Select::make('input3')
-                                            ->label('Confidence (C)')
-                                            ->options([1 => 1, 3 => 3, 4 => 4, 6 => 6, 8 => 8, 10 => 10])
-                                            ->required(),
-                                        Forms\Components\Select::make('input4')
-                                            ->label('Effort (E)')
-                                            ->options([1 => 1, 3 => 3, 5 => 5, 7 => 7, 10 => 10])
-                                            ->required(),
-                                    ]),
+                                Forms\Components\TextInput::make('rice_score')
+                                    ->label('RICE Score')
+                                    ->disabled()
+                                    ->dehydrated(false)
+                                    ->default(function (Task $record) {
+                                        return $record->rice_score ?? 'N/A';
+                                    }),
                             ]),
                         Forms\Components\Section::make('Evaluation')
                             ->schema([

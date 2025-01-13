@@ -2,11 +2,12 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\TypeResource\Pages;
-use App\Models\Type;
 use Filament\Forms;
-use Filament\Resources\Resource;
+use App\Models\Type;
 use Filament\Tables;
+use Filament\Resources\Resource;
+use App\Filament\Resources\TypeResource\Pages;
+use App\Filament\Resources\TypeResource\RelationManagers\CategoriesRelationManager;
 
 class TypeResource extends Resource
 {
@@ -22,12 +23,12 @@ class TypeResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('type_name')
+                Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255)
                     ->label('Type Name'),
 
-                Forms\Components\Textarea::make('type_description')
+                Forms\Components\Textarea::make('description')
                     ->maxLength(65535)
                     ->label('Description')
                     ->columnSpanFull(),
@@ -38,12 +39,12 @@ class TypeResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('type_name')
+                Tables\Columns\TextColumn::make('name')
                     ->searchable()
                     ->sortable()
                     ->label('Type Name'),
 
-                Tables\Columns\TextColumn::make('type_description')
+                Tables\Columns\TextColumn::make('description')
                     ->searchable()
                     ->limit(50)
                     ->label('Description'),
@@ -96,7 +97,7 @@ class TypeResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            CategoriesRelationManager::class,
         ];
     }
 

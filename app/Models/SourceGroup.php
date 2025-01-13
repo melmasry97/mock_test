@@ -7,16 +7,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SourceGroup extends Model
 {
-    protected $primaryKey = 'group_id';
-
     protected $fillable = [
-        'group_name',
-        'group_description',
+        'name',
+        'description'
     ];
 
     public function sources(): HasMany
     {
-        return $this->hasMany(Source::class, 'group_id');
+        return $this->hasMany(Source::class, 'source_group_id');
     }
 
     public function tasks(): HasMany
