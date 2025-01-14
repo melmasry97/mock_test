@@ -13,37 +13,27 @@ class Task extends Model
     protected $fillable = [
         'name',
         'description',
-        'state',
         'project_id',
         'project_module_id',
-        'source_group_id',
-        'source_id',
         'type_id',
         'status',
-        'task_evaluation_time_period',
+        'rice_evaluation_end_time',
         'evaluation_end_time',
-        'rice_score',
         'reach',
         'impact',
         'confidence',
         'effort',
-        'overall_evaluation_value'
+        'rice_score',
     ];
 
     protected $casts = [
-        'weight' => 'decimal:2',
-        'iso_weight' => 'float',
-        'rice_score' => 'decimal:2',
+        'rice_evaluation_end_time' => 'datetime',
+        'evaluation_end_time' => 'datetime',
         'reach' => 'integer',
         'impact' => 'integer',
         'confidence' => 'integer',
         'effort' => 'integer',
-        'overall_evaluation_value' => 'decimal:2',
-        'evaluation_end_time' => 'datetime',
-        'state' => TaskState::class,
-        'end_date' => 'date',
-        'average_evaluation' => 'float',
-        'evaluation_count' => 'integer',
+        'rice_score' => 'float',
     ];
 
     public function project(): BelongsTo
@@ -87,27 +77,72 @@ class Task extends Model
         return $this->hasMany(Metric::class, 'task_id');
     }
 
+    public function riceEvaluations(): HasMany
+    {
+        return $this->hasMany(RiceEvaluation::class);
+    }
+
+    public function getUserEvaluationRemainingTimeAttribute(): ?string
+    {
+        if (!$this->evaluation_end_time) {
+            return null;
+        }
+
+        if ($this->evaluation_end_time->isPast()) {
+            return 'Ended';
+        }
+
+        return now()->diffForHumans($this->evaluation_end_time, ['parts' => 2]);
+    }
+
+    public function getRiceEvaluationRemainingTimeAttribute(): ?string
+    {
+        if (!$this->rice_evaluation_end_time) {
+            return null;
+        }
+
+        if ($this->rice_evaluation_end_time->isPast()) {
+            return 'Ended';
+        }
+
+        return now()->diffForHumans($this->rice_evaluation_end_time, ['parts' => 2]);
+    }
+
+    public function canBeEvaluatedByAdmin(): bool
+    {
+        return $this->rice_evaluation_end_time?->isFuture() ?? false;
+    }
+
+    public function canBeEvaluatedByUser(): bool
+    {
+        return $this->status === 'approved' &&
+               $this->evaluation_end_time?->isFuture() ?? false;
+    }
+
+    public function calculateFinalRiceScore(): void
+    {
+        if ($this->rice_evaluation_end_time->isPast()) {
+            $evaluations = $this->riceEvaluations;
+
+            if ($evaluations->count() > 0) {
+                $this->reach = (int) round($evaluations->avg('reach'));
+                $this->impact = (int) round($evaluations->avg('impact'));
+                $this->confidence = (int) round($evaluations->avg('confidence'));
+                $this->effort = (int) round($evaluations->avg('effort'));
+                $this->rice_score = ($this->reach * $this->impact * $this->confidence) / $this->effort;
+                $this->status = 'evaluating';
+                $this->save();
+            }
+        }
+    }
+
     public function calculateOverallEvaluation(): void
     {
-        // Step 1: Get module weight
-        $moduleWeight = $this->projectModule->weight ?? 0;
+        $evaluations = $this->evaluations;
 
-        // Step 2: Get average of user Fibonacci weights
-        $userFibonacciAverage = $this->evaluations->avg('fibonacci_weight') ?? 0;
-
-        // Step 3: Calculate mean of selected type categories' weights
-        $typeCategoriesAverage = $this->categories->avg('evaluation_average_value') ?? 0;
-
-        // Step 4: Get RICE score set by admin
-        $riceScore = $this->rice_score ?? 0;
-
-        // Step 5: Calculate final overall evaluation value
-        $this->overall_evaluation_value = $moduleWeight * $userFibonacciAverage * $typeCategoriesAverage * $riceScore;
-        $this->save();
-
-        // Update evaluation count
-        $this->evaluation_count = $this->evaluations()->count();
-        $this->average_evaluation = $userFibonacciAverage;
-        $this->save();
+        if ($evaluations->count() > 0) {
+            $this->overall_evaluation_value = $evaluations->avg('fibonacci_weight');
+            $this->save();
+        }
     }
 }

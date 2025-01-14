@@ -22,10 +22,10 @@ class Kernel extends ConsoleKernel
      * @param  \Illuminate\Console\Scheduling\Schedule  $schedule
      * @return void
      */
-    protected function schedule(Schedule $schedule)
+    protected function schedule(Schedule $schedule): void
     {
-        // Remove the daily scheduled job
-        // $schedule->job(new CalculateTaskWeight)->daily();
+        $schedule->command('app:check-rice-deadlines')->everyMinute();
+        $schedule->command('app:check-user-deadlines')->everyMinute();
     }
 
     /**

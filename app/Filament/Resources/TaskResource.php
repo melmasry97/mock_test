@@ -24,79 +24,28 @@ class TaskResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Grid::make(2)
-                    ->schema([
-                        Forms\Components\TextInput::make('name')
-                            ->required()
-                            ->maxLength(255),
+                Forms\Components\Select::make('project_id')
+                    ->relationship('project', 'name')
+                    ->required()
+                    ->searchable()
+                    ->preload()
+                    ->label('Project'),
 
-                        Forms\Components\Select::make('state')
-                            ->options(TaskState::getLabels())
-                            ->required()
-                            ->enum(TaskState::class),
-                    ]),
+                Forms\Components\Select::make('project_module_id')
+                    ->relationship('projectModule', 'name')
+                    ->required()
+                    ->searchable()
+                    ->preload()
+                    ->label('Project Module'),
+
+                Forms\Components\TextInput::make('name')
+                    ->required()
+                    ->maxLength(255),
 
                 Forms\Components\Textarea::make('description')
                     ->maxLength(65535)
                     ->columnSpanFull(),
 
-                // Project Section
-                Forms\Components\Grid::make(2)
-                    ->schema([
-                        Forms\Components\Select::make('project_id')
-                            ->label('Project')
-                            ->options(Project::pluck('name', 'id'))
-                            ->searchable()
-                            ->preload()
-                            ->live()
-                            ->required()
-                            ->afterStateUpdated(fn (callable $set) => $set('project_module_id', null)),
-
-                        Forms\Components\Select::make('project_module_id')
-                            ->label('Project Module')
-                            ->options(function (callable $get) {
-                                $projectId = $get('project_id');
-                                if (!$projectId) {
-                                    return [];
-                                }
-                                return ProjectModule::where('project_id', $projectId)
-                                    ->pluck('name', 'id');
-                            })
-                            ->searchable()
-                            ->preload()
-                            ->required()
-                            ->live()
-                            ->disabled(fn (callable $get) => !$get('project_id')),
-                    ]),
-
-                // Source Section
-                Forms\Components\Grid::make(2)
-                    ->schema([
-                        Forms\Components\Select::make('source_group_id')
-                            ->relationship('sourceGroup', 'name')
-                            ->searchable()
-                            ->preload()
-                            ->live()
-                            ->label('Source Group')
-                            ->afterStateUpdated(fn (callable $set) => $set('source_id', null)),
-
-                        Forms\Components\Select::make('source_id')
-                            ->options(function (callable $get) {
-                                $groupId = $get('source_group_id');
-                                if (!$groupId) {
-                                    return [];
-                                }
-                                return Source::where('source_group_id', $groupId)
-                                    ->pluck('name', 'id');
-                            })
-                            ->searchable()
-                            ->preload()
-                            ->live()
-                            ->label('Source')
-                            ->disabled(fn (callable $get) => !$get('source_group_id')),
-                    ]),
-
-                // Type and Status Section
                 Forms\Components\Grid::make(3)
                     ->schema([
                         Forms\Components\Select::make('type_id')
@@ -132,72 +81,85 @@ class TaskResource extends Resource
                         Forms\Components\Select::make('status')
                             ->options([
                                 'pending' => 'Pending',
-                                'approved' => 'Approved',
                                 'evaluating' => 'Evaluating',
+                                'approved' => 'Approved',
                                 'completed' => 'Completed',
                             ])
-                            ->default('pending'),
+                            ->default('pending')
+                            ->required(),
                     ]),
 
-                Forms\Components\Grid::make(2)
+                Forms\Components\Section::make('RICE Evaluation Settings')
                     ->schema([
-                        Forms\Components\TextInput::make('task_evaluation_time_period')
-                            ->numeric()
-                            ->label('Evaluation Time Period (days)')
-                            ->nullable(),
-
-                        Forms\Components\DateTimePicker::make('evaluation_end_time')
-                            ->label('Evaluation End Time')
-                            ->nullable(),
-                    ]),
-
-                // RICE Section at the end
-                Forms\Components\Section::make('RICE Weight')
-                    ->collapsible()
-                    ->schema([
-                        Forms\Components\Grid::make(4)
+                        Forms\Components\Grid::make(2)
                             ->schema([
-                                Forms\Components\Select::make('reach')
-                                    ->label('Reach (R)')
-                                    ->options([1 => 1, 3 => 3, 4 => 4, 6 => 6, 8 => 8, 10 => 10])
+                                Forms\Components\DateTimePicker::make('rice_evaluation_end_time')
+                                    ->label('Admin RICE Evaluation End Time')
                                     ->required()
-                                    ->afterStateUpdated(function ($state, $set, $get) {
-                                        $rice_score = ($state * $get('impact') * $get('confidence')) / ($get('effort') ?: 1);
-                                        $set('rice_score', round($rice_score, 2));
-                                    }),
+                                    ->helperText('After this time, the final RICE score will be calculated from admin evaluations')
+                                    ->visible(fn ($record) => !$record?->rice_score),
 
-                                Forms\Components\Select::make('impact')
-                                    ->label('Impact (I)')
-                                    ->options([1 => 1, 3 => 3, 4 => 4, 6 => 6, 8 => 8, 10 => 10])
-                                    ->required()
-                                    ->afterStateUpdated(function ($state, $set, $get) {
-                                        $rice_score = ($get('reach') * $state * $get('confidence')) / ($get('effort') ?: 1);
-                                        $set('rice_score', round($rice_score, 2));
-                                    }),
-
-                                Forms\Components\Select::make('confidence')
-                                    ->label('Confidence (C)')
-                                    ->options([1 => 1, 3 => 3, 4 => 4, 6 => 6, 8 => 8, 10 => 10])
-                                    ->required()
-                                    ->afterStateUpdated(function ($state, $set, $get) {
-                                        $rice_score = ($get('reach') * $get('impact') * $state) / ($get('effort') ?: 1);
-                                        $set('rice_score', round($rice_score, 2));
-                                    }),
-
-                                Forms\Components\Select::make('effort')
-                                    ->label('Effort (E)')
-                                    ->options([1 => 1, 3 => 3, 5 => 5, 7 => 7, 10 => 10])
-                                    ->required()
-                                    ->afterStateUpdated(function ($state, $set, $get) {
-                                        $rice_score = ($get('reach') * $get('impact') * $get('confidence')) / ($state ?: 1);
-                                        $set('rice_score', round($rice_score, 2));
-                                    }),
+                                Forms\Components\DateTimePicker::make('evaluation_end_time')
+                                    ->label('User Evaluation End Time')
+                                    ->helperText('Users can only evaluate the task before this time')
+                                    ->visible(fn (string $operation) => $operation === 'edit'),
                             ]),
 
-                        Forms\Components\TextInput::make('rice_score')
-                            ->label('RICE Score')
-                            ->disabled()
-                            ->dehydrated(),
+                        Forms\Components\Placeholder::make('rice_evaluations')
+                            ->label('RICE Evaluations')
+                            ->content(function ($record) {
+                                if (!$record) return 'Save the task first to view evaluations.';
+
+                                $evaluations = $record->riceEvaluations()->with('user')->get();
+                                if ($evaluations->isEmpty()) return 'No evaluations yet.';
+
+                                return view('filament.components.rice-evaluations-table', [
+                                    'evaluations' => $evaluations->map(function ($eval) {
+                                        return [
+                                            'evaluator' => $eval->user->name,
+                                            'reach' => $eval->reach,
+                                            'impact' => $eval->impact,
+                                            'confidence' => $eval->confidence,
+                                            'effort' => $eval->effort,
+                                            'score' => $eval->score,
+                                            'evaluated_at' => $eval->created_at->format('Y-m-d H:i:s'),
+                                        ];
+                                    })
+                                ]);
+                            })
+                            ->visible(fn (string $operation) => $operation === 'edit'),
+                    ]),
+
+                Forms\Components\Section::make('Final RICE Score')
+                    ->schema([
+                        Forms\Components\Grid::make(5)
+                            ->schema([
+                                Forms\Components\TextInput::make('reach')
+                                    ->numeric()
+                                    ->disabled()
+                                    ->label('R'),
+
+                                Forms\Components\TextInput::make('impact')
+                                    ->numeric()
+                                    ->disabled()
+                                    ->label('I'),
+
+                                Forms\Components\TextInput::make('confidence')
+                                    ->numeric()
+                                    ->disabled()
+                                    ->label('C'),
+
+                                Forms\Components\TextInput::make('effort')
+                                    ->numeric()
+                                    ->disabled()
+                                    ->label('E'),
+
+                                Forms\Components\TextInput::make('rice_score')
+                                    ->numeric()
+                                    ->disabled()
+                                    ->label('Score'),
+                            ])
+                            ->visible(fn (string $operation) => $operation === 'edit'),
                     ]),
             ]);
     }
@@ -210,23 +172,30 @@ class TaskResource extends Resource
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('state')
-                    ->badge()
-                    ->color(fn (TaskState $state): string => match ($state) {
-                        TaskState::REPO => 'gray',
-                        TaskState::TODO => 'warning',
-                        TaskState::IN_PROGRESS => 'info',
-                        TaskState::DONE => 'success',
-                    }),
-
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'pending' => 'gray',
-                        'approved' => 'warning',
                         'evaluating' => 'info',
+                        'approved' => 'warning',
                         'completed' => 'success',
                         default => 'gray',
+                    }),
+
+                Tables\Columns\TextColumn::make('rice_evaluation_remaining_time')
+                    ->label('RICE Evaluation Time')
+                    ->badge()
+                    ->color(fn ($state) => $state === 'Ended' ? 'danger' : 'success')
+                    ->sortable(query: function (Builder $query, string $direction): Builder {
+                        return $query->orderBy('rice_evaluation_end_time', $direction);
+                    }),
+
+                Tables\Columns\TextColumn::make('user_evaluation_remaining_time')
+                    ->label('User Evaluation Time')
+                    ->badge()
+                    ->color(fn ($state) => $state === 'Ended' ? 'danger' : 'success')
+                    ->sortable(query: function (Builder $query, string $direction): Builder {
+                        return $query->orderBy('evaluation_end_time', $direction);
                     }),
 
                 Tables\Columns\TextColumn::make('project.name')
@@ -284,6 +253,46 @@ class TaskResource extends Resource
                     ->relationship('type', 'name'),
             ])
             ->actions([
+                Tables\Actions\Action::make('evaluate_rice')
+                    ->form([
+                        Forms\Components\Grid::make(4)
+                            ->schema([
+                                Forms\Components\Select::make('reach')
+                                    ->label('Reach (R)')
+                                    ->options([1 => 1, 3 => 3, 4 => 4, 6 => 6, 8 => 8, 10 => 10])
+                                    ->required(),
+
+                                Forms\Components\Select::make('impact')
+                                    ->label('Impact (I)')
+                                    ->options([1 => 1, 3 => 3, 4 => 4, 6 => 6, 8 => 8, 10 => 10])
+                                    ->required(),
+
+                                Forms\Components\Select::make('confidence')
+                                    ->label('Confidence (C)')
+                                    ->options([1 => 1, 3 => 3, 4 => 4, 6 => 6, 8 => 8, 10 => 10])
+                                    ->required(),
+
+                                Forms\Components\Select::make('effort')
+                                    ->label('Effort (E)')
+                                    ->options([1 => 1, 3 => 3, 5 => 5, 7 => 7, 10 => 10])
+                                    ->required(),
+                            ]),
+                    ])
+                    ->action(function (array $data, Task $record): void {
+                        $record->riceEvaluations()->create([
+                            'user_id' => auth()->id(),
+                            'reach' => $data['reach'],
+                            'impact' => $data['impact'],
+                            'confidence' => $data['confidence'],
+                            'effort' => $data['effort'],
+                        ]);
+
+                        $record->calculateFinalRiceScore();
+                    })
+                    ->visible(fn (Task $record): bool => $record->canBeEvaluatedByAdmin())
+                    ->modalHeading('Evaluate RICE Score')
+                    ->icon('heroicon-o-calculator'),
+
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([

@@ -5,125 +5,77 @@ namespace App\Filament\User\Resources;
 use Filament\Forms;
 use App\Models\Task;
 use Filament\Tables;
-use App\Enums\TaskState;
-use Filament\Forms\Form;
 use Filament\Tables\Table;
-use App\Models\ProjectModule;
 use Filament\Resources\Resource;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
-use App\Filament\User\Resources\BacklogResource\Pages;
+use App\Filament\User\Resources\BacklogResource\Pages\EditBacklogTask;
+use App\Filament\User\Resources\BacklogResource\Pages\ListBacklogTasks;
+use App\Filament\User\Resources\BacklogResource\Pages\CreateBacklogTask;
 
 class BacklogResource extends Resource
 {
     protected static ?string $model = Task::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-queue-list';
+    protected static ?string $navigationIcon = 'heroicon-o-archive-box';
 
-    protected static ?string $navigationLabel = 'Backlog Tasks';
+    protected static ?string $navigationLabel = 'Backlog';
 
-    protected static ?string $navigationGroup = 'Task Management';
-
-    protected static ?string $slug = 'backlog-tasks';
-
-    public static function form(Form $form): Form
+    public static function getEloquentQuery(): Builder
     {
-        return $form
-            ->schema([
-                Forms\Components\TextInput::make('name')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\Textarea::make('description')
-                    ->maxLength(65535),
-                Forms\Components\Hidden::make('state')
-                    ->default(TaskState::DONE),
-                Forms\Components\TextInput::make('weight')
-                    ->label('Weight (%)')
-                    ->required()
-                    ->numeric()
-                    ->default(0)
-                    ->minValue(0)
-                    ->maxValue(100),
-                Forms\Components\Select::make('project_module_id')
-                    ->label('Project Module')
-                    ->options(ProjectModule::all()->pluck('name', 'id'))
-                    ->searchable()
-                    ->required(),
-            ]);
+        return parent::getEloquentQuery()
+            ->whereHas('evaluations', function ($query) {
+                $query->where('user_id', auth()->id());
+            });
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('id')
-                    ->label('Task ID')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('projectModule.project.name')
-                    ->label('Project Name')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('projectModule.name')
-                    ->label('Project Module')
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('name')
-                    ->label('Task Name')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('description')
-                    ->label('Task Description')
-                    ->limit(50),
-                Tables\Columns\TextColumn::make('weight')
-                    ->label('Weight')
-                    ->sortable()
-                    ->formatStateUsing(fn ($state) => number_format($state, 2) . '%'),
-            ])
-            ->filters([
-                //
-            ])
-            ->actions([
-                Tables\Actions\ViewAction::make(),
-            ])
-            ->bulkActions([
-                // Remove bulk actions if not needed
-            ]);
-    }
 
-    public static function getRelations(): array
-    {
-        return [
-            //
-        ];
+                Tables\Columns\TextColumn::make('project.name')
+                    ->searchable()
+                    ->sortable()
+                    ->label('Project'),
+
+                Tables\Columns\TextColumn::make('projectModule.name')
+                    ->searchable()
+                    ->sortable()
+                    ->label('Module'),
+
+                Tables\Columns\TextColumn::make('type.name')
+                    ->searchable()
+                    ->sortable()
+                    ->label('Type'),
+
+                Tables\Columns\TextColumn::make('user_evaluation')
+                    ->label('Your Evaluation')
+                    ->badge()
+                    ->color('success')
+                    ->formatStateUsing(function ($record) {
+                        $evaluation = $record->evaluations()
+                            ->where('user_id', auth()->id())
+                            ->first();
+
+                        return $evaluation ? $evaluation->fibonacci_weight : 'N/A';
+                    }),
+
+                Tables\Columns\TextColumn::make('overall_evaluation_value')
+                    ->label('Overall Score')
+                    ->numeric(2)
+                    ->sortable(),
+            ]);
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListBacklogTasks::route('/'),
+            'index' => ListBacklogTasks::route('/'),
+            'create' => CreateBacklogTask::route('/create'),
+            'edit' => EditBacklogTask::route('/{record}/edit'),
         ];
-    }
-
-    public static function getEloquentQuery(): Builder
-    {
-        return parent::getEloquentQuery()->where('state', TaskState::DONE);
-    }
-
-    public static function getModelLabel(): string
-    {
-        return 'Backlog Task';
-    }
-
-    public static function getPluralModelLabel(): string
-    {
-        return 'Backlog Tasks';
-    }
-
-    public static function canCreate(): bool
-    {
-        return false;
-    }
-
-    public static function canEdit(Model $record): bool
-    {
-        return false;
     }
 }

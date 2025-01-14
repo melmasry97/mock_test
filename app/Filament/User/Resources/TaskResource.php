@@ -40,145 +40,98 @@ class TaskResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('id')
-                    ->label('Task ID')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('projectModule.project.name')
-                    ->label('Project Name')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('projectModule.name')
-                    ->label('Project Module')
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('name')
-                    ->label('Task Name')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('description')
-                    ->label('Task Description')
-                    ->limit(50),
-                Tables\Columns\TextColumn::make('state')
-                    ->formatStateUsing(fn (TaskState $state): string => TaskState::getLabels()[$state->value])
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('end_date')
-                    ->date()
-                    ->sortable(),
-                // Weight column removed
+
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'pending' => 'gray',
+                        'evaluating' => 'info',
+                        'approved' => 'warning',
+                        'completed' => 'success',
+                        default => 'gray',
+                    }),
+
+                Tables\Columns\TextColumn::make('project.name')
+                    ->searchable()
+                    ->sortable()
+                    ->label('Project'),
+
+                Tables\Columns\TextColumn::make('projectModule.name')
+                    ->searchable()
+                    ->sortable()
+                    ->label('Module'),
+
+                Tables\Columns\TextColumn::make('type.name')
+                    ->searchable()
+                    ->sortable()
+                    ->label('Type'),
+
+                Tables\Columns\TextColumn::make('user_evaluation_remaining_time')
+                    ->label('Evaluation Time')
+                    ->badge()
+                    ->color(fn ($state) => $state === 'Ended' ? 'danger' : 'success')
+                    ->sortable(query: function (Builder $query, string $direction): Builder {
+                        return $query->orderBy('evaluation_end_time', $direction);
+                    }),
+
+                Tables\Columns\TextColumn::make('user_evaluation_status')
+                    ->label('Your Evaluation')
+                    ->badge()
+                    ->formatStateUsing(function ($record) {
+                        $evaluation = $record->evaluations()
+                            ->where('user_id', auth()->id())
+                            ->first();
+
+                        if ($evaluation) {
+                            return 'Evaluated: ' . $evaluation->fibonacci_weight;
+                        }
+
+                        return 'Not Evaluated';
+                    })
+                    ->color(function ($record) {
+                        return $record->evaluations()
+                            ->where('user_id', auth()->id())
+                            ->exists() ? 'success' : 'warning';
+                    }),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('state')
-                    ->options([
-                        'all' => 'All Tasks',
-                        TaskState::REPO->value => 'Repo Tasks',
-                        TaskState::DONE->value => 'Done Tasks',
-                    ])
-                    ->default('all')
-                    ->query(function ($query, array $data) {
-                        if ($data['value'] === 'all') {
-                            return $query;
-                        }
-                        return $query->where('state', $data['value']);
-                    }),
+                //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\Action::make('addMetrics')
-                    ->label('Evaluate')
-                    ->icon('heroicon-o-star')
-                    ->modalHeading(fn (Task $record): string => "Evaluate: {$record->name}")
-                    ->modalSubmitActionLabel('Save Evaluation')
-                    ->modalIcon('heroicon-o-star')
+                Tables\Actions\Action::make('evaluate')
                     ->form([
-                        Forms\Components\Section::make('Module Information')
+                        Forms\Components\Grid::make(1)
                             ->schema([
-                                Forms\Components\TextInput::make('module_weight')
-                                    ->label('Module Weight')
-                                    ->disabled()
-                                    ->dehydrated(false)
-                                    ->default(function (Task $record) {
-                                        return $record->projectModule->weight ?? 'N/A';
-                                    }),
-                            ]),
-                        Forms\Components\Section::make('RICE Weight')
-                            ->schema([
-                                Forms\Components\Grid::make(4)
-                                    ->schema([
-                                        Forms\Components\Select::make('input1')
-                                            ->label('Reach (R)')
-                                            ->options([1 => 1, 3 => 3, 4 => 4, 6 => 6, 8 => 8, 10 => 10])
-                                            ->required(),
-                                        Forms\Components\Select::make('input2')
-                                            ->label('Impact (I)')
-                                            ->options([1 => 1, 3 => 3, 4 => 4, 6 => 6, 8 => 8, 10 => 10])
-                                            ->required(),
-                                        Forms\Components\Select::make('input3')
-                                            ->label('Confidence (C)')
-                                            ->options([1 => 1, 3 => 3, 4 => 4, 6 => 6, 8 => 8, 10 => 10])
-                                            ->required(),
-                                        Forms\Components\Select::make('input4')
-                                            ->label('Effort (E)')
-                                            ->options([1 => 1, 3 => 3, 5 => 5, 7 => 7, 10 => 10])
-                                            ->required(),
-                                    ]),
-                            ]),
-                        Forms\Components\Section::make('ISO Weight')
-                            ->schema([
-                                Forms\Components\Grid::make(3)
-                                    ->schema(
-                                        IsoTask::take(9)->get()->map(function ($isoTask) {
-                                            return Forms\Components\Select::make("matrix_values.{$isoTask->id}")
-                                                ->label($isoTask->name)
-                                                ->options([0 => 0, 1 => 1, 2 => 2, 3 => 3, 5 => 5])
-                                                ->required()
-                                                ->extraAttributes(['class' => 'text-center']);
-                                        })->toArray()
-                                    ),
+                                Forms\Components\Select::make('fibonacci_weight')
+                                    ->label('Evaluation Weight')
+                                    ->options([
+                                        1 => '1 - Very Low',
+                                        2 => '2 - Low',
+                                        3 => '3 - Medium',
+                                        5 => '5 - High',
+                                        8 => '8 - Very High',
+                                        13 => '13 - Critical'
+                                    ])
+                                    ->required(),
                             ]),
                     ])
-                    ->action(function (Task $record, array $data) {
-                        DB::transaction(function () use ($record, $data) {
-                            $calculatedValue = ($data['input1'] * $data['input2'] * $data['input3']) / $data['input4'];
+                    ->action(function (array $data, Task $record): void {
+                        $record->evaluations()->create([
+                            'user_id' => auth()->id(),
+                            'fibonacci_weight' => $data['fibonacci_weight'],
+                        ]);
 
-                            // Calculate matrix_calculated_value
-                            $matrixCalculatedValue = 0;
-                            foreach ($data['matrix_values'] as $isoTaskId => $value) {
-                                $isoTask = IsoTask::find($isoTaskId);
-                                $matrixCalculatedValue += ($isoTask->weight / 100) * $value; // Convert weight to decimal
-                            }
-
-                            $metric = new Metric([
-                                'task_id' => $record->id,
-                                'user_id' => auth()->id(),
-                                'module_weight' => $record->projectModule->weight,
-                                'input1' => $data['input1'],
-                                'input2' => $data['input2'],
-                                'input3' => $data['input3'],
-                                'input4' => $data['input4'],
-                                'calculated_value' => $calculatedValue,
-                                'matrix_values' => $data['matrix_values'],
-                                'matrix_calculated_value' => $matrixCalculatedValue,
-                            ]);
-
-                            $record->metrics()->save($metric);
-                            $record->update(['state' => TaskState::DONE]);
-
-                            Log::info('Metric saved for task: ' . $record->id);
-                        });
-
-                        Notification::make()
-                            ->success()
-                            ->title('Evaluation added successfully')
-                            ->body('The evaluation has been added and the task has been marked as done.')
-                            ->send();
+                        $record->calculateOverallEvaluation();
                     })
-                    ->visible(function (Task $record) {
-                        $isStateValid = $record->state === TaskState::REPO || $record->state === TaskState::IN_PROGRESS;
-                        $isBeforeEndDate = !$record->end_date || Carbon::now()->lt($record->end_date);
-                        $userHasNotEvaluated = !$record->metrics()->where('user_id', auth()->id())->exists();
-                        return $isStateValid && $isBeforeEndDate && $userHasNotEvaluated;
-                    }),
+                    ->visible(fn (Task $record): bool => $record->canBeEvaluatedByUser())
+                    ->modalHeading('Evaluate Task')
+                    ->icon('heroicon-o-star'),
             ])
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+                //
             ]);
     }
 
