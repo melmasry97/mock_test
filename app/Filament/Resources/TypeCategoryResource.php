@@ -14,7 +14,9 @@ class TypeCategoryResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-squares-2x2';
 
-    protected static ?string $navigationGroup = 'Type Management';
+    protected static ?string $navigationGroup = 'Requirement Types Management';
+
+    protected static ?string $navigationLabel = 'Requirement Types Categories';
 
     protected static ?int $navigationSort = 2;
 

@@ -26,8 +26,16 @@ class ProjectResource extends Resource
                 Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255),
+
                 Forms\Components\Textarea::make('description')
-                    ->maxLength(65535),
+                    ->maxLength(65535)
+                    ->columnSpanFull(),
+
+                Forms\Components\TextInput::make('weight')
+                    ->numeric()
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->helperText('This value is automatically calculated'),
             ]);
     }
 
@@ -36,14 +44,27 @@ class ProjectResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
+
                 Tables\Columns\TextColumn::make('description')
                     ->limit(50)
                     ->searchable(),
+
+                Tables\Columns\TextColumn::make('weight')
+                    ->numeric(2)
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('types_count')
+                    ->counts('types')
+                    ->label('Types')
+                    ->sortable(),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+
                 Tables\Columns\TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
@@ -63,7 +84,7 @@ class ProjectResource extends Resource
     public static function getRelations(): array
     {
         return [
-            RelationManagers\IsoTasksRelationManager::class,
+            RelationManagers\TypesRelationManager::class,
         ];
     }
 

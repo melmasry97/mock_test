@@ -15,7 +15,9 @@ class TypeResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-tag';
 
-    protected static ?string $navigationGroup = 'Type Management';
+    protected static ?string $navigationGroup = 'Requirement Types Management';
+
+    protected static ?string $navigationLabel = 'Requirement Types';
 
     protected static ?int $navigationSort = 1;
 
@@ -23,6 +25,20 @@ class TypeResource extends Resource
     {
         return $form
             ->schema([
+                Forms\Components\Select::make('project_id')
+                    ->relationship('project', 'name')
+                    ->required()
+                    ->searchable()
+                    ->preload()
+                    ->createOptionForm([
+                        Forms\Components\TextInput::make('name')
+                            ->required()
+                            ->maxLength(255),
+                        Forms\Components\Textarea::make('description')
+                            ->maxLength(65535),
+                    ])
+                    ->label('Project'),
+
                 Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255)
@@ -39,6 +55,11 @@ class TypeResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('project.name')
+                    ->searchable()
+                    ->sortable()
+                    ->label('Project'),
+
                 Tables\Columns\TextColumn::make('name')
                     ->searchable()
                     ->sortable()
@@ -53,17 +74,17 @@ class TypeResource extends Resource
                     ->counts('categories')
                     ->label('Categories'),
 
-                Tables\Columns\TextColumn::make('tasks_count')
-                    ->counts('tasks')
-                    ->label('Tasks'),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('project')
+                    ->relationship('project', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->label('Project'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
