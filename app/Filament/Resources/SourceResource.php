@@ -14,7 +14,7 @@ class SourceResource extends Resource
 {
     protected static ?string $model = Source::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-duplicate';
+    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     protected static ?string $navigationGroup = 'Source Management';
 
@@ -24,28 +24,19 @@ class SourceResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('id')
+                Forms\Components\Select::make('source_group_id')
                     ->relationship('sourceGroup', 'name')
                     ->required()
                     ->searchable()
                     ->preload()
-                    ->createOptionForm([
-                        Forms\Components\TextInput::make('name')
-                            ->required()
-                            ->maxLength(255),
-                        Forms\Components\Textarea::make('description')
-                            ->maxLength(65535),
-                    ])
                     ->label('Source Group'),
 
                 Forms\Components\TextInput::make('name')
                     ->required()
-                    ->maxLength(255)
-                    ->label('Source Name'),
+                    ->maxLength(255),
 
                 Forms\Components\Textarea::make('description')
                     ->maxLength(65535)
-                    ->label('Description')
                     ->columnSpanFull(),
             ]);
     }
@@ -57,17 +48,16 @@ class SourceResource extends Resource
                 Tables\Columns\TextColumn::make('sourceGroup.name')
                     ->searchable()
                     ->sortable()
-                    ->label('Group'),
+                    ->label('Source Group'),
 
                 Tables\Columns\TextColumn::make('name')
                     ->searchable()
-                    ->sortable()
-                    ->label('Source Name'),
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('description')
                     ->searchable()
                     ->limit(50)
-                    ->label('Description'),
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('tasks_count')
                     ->counts('tasks')
