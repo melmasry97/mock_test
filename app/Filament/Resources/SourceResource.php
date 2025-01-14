@@ -24,26 +24,26 @@ class SourceResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('group_id')
-                    ->relationship('sourceGroup', 'group_name')
+                Forms\Components\Select::make('id')
+                    ->relationship('sourceGroup', 'name')
                     ->required()
                     ->searchable()
                     ->preload()
                     ->createOptionForm([
-                        Forms\Components\TextInput::make('group_name')
+                        Forms\Components\TextInput::make('name')
                             ->required()
                             ->maxLength(255),
-                        Forms\Components\Textarea::make('group_description')
+                        Forms\Components\Textarea::make('description')
                             ->maxLength(65535),
                     ])
                     ->label('Source Group'),
 
-                Forms\Components\TextInput::make('source_name')
+                Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255)
                     ->label('Source Name'),
 
-                Forms\Components\Textarea::make('source_description')
+                Forms\Components\Textarea::make('description')
                     ->maxLength(65535)
                     ->label('Description')
                     ->columnSpanFull(),
@@ -54,17 +54,17 @@ class SourceResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('sourceGroup.group_name')
+                Tables\Columns\TextColumn::make('sourceGroup.name')
                     ->searchable()
                     ->sortable()
                     ->label('Group'),
 
-                Tables\Columns\TextColumn::make('source_name')
+                Tables\Columns\TextColumn::make('name')
                     ->searchable()
                     ->sortable()
                     ->label('Source Name'),
 
-                Tables\Columns\TextColumn::make('source_description')
+                Tables\Columns\TextColumn::make('description')
                     ->searchable()
                     ->limit(50)
                     ->label('Description'),
@@ -79,8 +79,8 @@ class SourceResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('group_id')
-                    ->relationship('sourceGroup', 'group_name')
+                Tables\Filters\SelectFilter::make('id')
+                    ->relationship('sourceGroup', 'name')
                     ->label('Source Group')
                     ->searchable()
                     ->preload(),

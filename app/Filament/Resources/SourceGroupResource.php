@@ -24,12 +24,12 @@ class SourceGroupResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('group_name')
+                Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255)
                     ->label('Group Name'),
 
-                Forms\Components\Textarea::make('group_description')
+                Forms\Components\Textarea::make('description')
                     ->maxLength(65535)
                     ->label('Description')
                     ->columnSpanFull(),
@@ -40,12 +40,12 @@ class SourceGroupResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('group_name')
+                Tables\Columns\TextColumn::make('name')
                     ->searchable()
                     ->sortable()
                     ->label('Group Name'),
 
-                Tables\Columns\TextColumn::make('group_description')
+                Tables\Columns\TextColumn::make('description')
                     ->searchable()
                     ->limit(50)
                     ->label('Description'),
