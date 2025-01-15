@@ -222,44 +222,21 @@ class TaskResource extends Resource
                         Forms\Components\Grid::make(2)
                             ->schema([
                                 Forms\Components\Select::make('reach')
-                                    ->label('Reach')
-                                    ->options([
-                                        1 => '1 - Very Low',
-                                        2 => '2 - Low',
-                                        3 => '3 - Medium',
-                                        4 => '4 - High',
-                                        5 => '5 - Very High',
-                                    ])
+                                    ->label('Reach (R)')
+                                    ->options([1 => 1, 3 => 3, 4 => 4, 6 => 6, 8 => 8, 10 => 10])
+
                                     ->required(),
                                 Forms\Components\Select::make('impact')
-                                    ->label('Impact')
-                                    ->options([
-                                        1 => '1 - Very Low',
-                                        2 => '2 - Low',
-                                        3 => '3 - Medium',
-                                        4 => '4 - High',
-                                        5 => '5 - Very High',
-                                    ])
+                                    ->label('Impact (I)')
+                                    ->options([1 => 1, 3 => 3, 4 => 4, 6 => 6, 8 => 8, 10 => 10])
                                     ->required(),
                                 Forms\Components\Select::make('confidence')
-                                    ->label('Confidence')
-                                    ->options([
-                                        1 => '1 - Very Low',
-                                        2 => '2 - Low',
-                                        3 => '3 - Medium',
-                                        4 => '4 - High',
-                                        5 => '5 - Very High',
-                                    ])
+                                    ->label('Confidence (C)')
+                                    ->options([1 => 1, 3 => 3, 4 => 4, 6 => 6, 8 => 8, 10 => 10])
                                     ->required(),
                                 Forms\Components\Select::make('effort')
-                                    ->label('Effort')
-                                    ->options([
-                                        1 => '1 - Very High',
-                                        2 => '2 - High',
-                                        3 => '3 - Medium',
-                                        4 => '4 - Low',
-                                        5 => '5 - Very Low',
-                                    ])
+                                    ->label('Effort (E)')
+                                    ->options([1 => 1, 3 => 3, 5 => 5, 7 => 7, 10 => 10])
                                     ->required(),
                             ]),
                     ])
