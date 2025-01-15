@@ -14,11 +14,11 @@ class TypeCategoryResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-squares-2x2';
 
-    protected static ?string $navigationGroup = 'Requirement Types Management';
+    protected static ?string $navigationGroup = 'Requirements';
 
-    protected static ?string $navigationLabel = 'Requirement Types Categories';
+    protected static ?string $navigationLabel = 'Requirement Type Categories';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 4;
 
     public static function form(Forms\Form $form): Forms\Form
     {

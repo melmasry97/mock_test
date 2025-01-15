@@ -25,9 +25,11 @@ class RepoResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    protected static ?string $navigationLabel = 'Repos';
+    protected static ?string $navigationLabel = 'Approved Tasks';
 
-    protected static ?string $navigationGroup = 'Repo Management';
+    protected static ?string $navigationGroup = 'Requirement Tasks';
+
+    protected static ?int $navigationSort = 3;
 
     protected static ?string $slug = 'repos';
 

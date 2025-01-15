@@ -15,11 +15,11 @@ class TypeResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-tag';
 
-    protected static ?string $navigationGroup = 'Requirement Types Management';
+    protected static ?string $navigationGroup = 'Requirements';
 
     protected static ?string $navigationLabel = 'Requirement Types';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 3;
 
     public static function form(Forms\Form $form): Forms\Form
     {

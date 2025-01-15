@@ -21,6 +21,12 @@ class TaskResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
+    protected static ?string $navigationGroup = 'Requirement Tasks';
+
+    protected static ?string $navigationLabel = 'Created Tasks (Waiting for RICE & Admin Approval)';
+
+    protected static ?int $navigationSort = 2;
+
     public static function form(Forms\Form $form): Forms\Form
     {
         return $form

@@ -16,7 +16,9 @@ class SourceResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    protected static ?string $navigationGroup = 'Source Management';
+    protected static ?string $navigationGroup = 'Requirements';
+
+    protected static ?string $navigationLabel = 'Requirement Sources';
 
     protected static ?int $navigationSort = 2;
 

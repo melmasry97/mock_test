@@ -18,6 +18,12 @@ class ProjectModuleResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
+    protected static ?string $navigationGroup = 'Projects';
+
+    protected static ?string $navigationLabel = 'Project Modules';
+
+    protected static ?int $navigationSort = 3;
+
     public static function form(Forms\Form $form): Forms\Form
     {
         return $form
