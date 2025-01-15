@@ -93,6 +93,11 @@ class TaskResource extends Resource
                         unset($data['status']);
                         return $data;
                     }),
+            ])
+            ->headerActions([
+                Tables\Actions\CreateAction::make()
+                    ->label('New Task')
+                    ->icon('heroicon-o-plus'),
             ]);
     }
 

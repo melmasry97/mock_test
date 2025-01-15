@@ -13,7 +13,7 @@ class ListRepos extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            // Create button removed
         ];
     }
 
