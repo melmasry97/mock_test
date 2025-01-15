@@ -31,7 +31,14 @@ class TypeCategory extends Model
 
     public function type(): BelongsTo
     {
-        return $this->belongsTo(Type::class);
+        return $this->belongsTo(Type::class, 'type_id');
+    }
+
+    public function projects(): BelongsToMany
+    {
+        return $this->belongsToMany(Project::class, 'project_type_category', 'category_id', 'project_id')
+            ->withPivot('weight')
+            ->withTimestamps();
     }
 
     public function tasks(): BelongsToMany
