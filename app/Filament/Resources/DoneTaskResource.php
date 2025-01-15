@@ -72,13 +72,33 @@ class DoneTaskResource extends Resource
                     ->label('Module')
                     ->sortable(),
 
+                Tables\Columns\TextColumn::make('projectModule.weight')
+                    ->label('Average Module Weight')
+                    ->numeric(2)
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('sourceGroup.name')
+                    ->label('Req Source Group')
+                    ->sortable()
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('source.name')
+                    ->label('Req Source')
+                    ->sortable()
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('type.name')
+                    ->label('ReqType')
+                    ->sortable()
+                    ->searchable(),
+
                 Tables\Columns\TextColumn::make('rice_score')
                     ->label('RICE Score')
                     ->numeric(2)
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('overall_evaluation_value')
-                    ->label('Fibonacci Weight')
+                    ->label('Average Team Weight')
                     ->numeric(2)
                     ->sortable(),
 
@@ -89,6 +109,7 @@ class DoneTaskResource extends Resource
 
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
+                    ->formatStateUsing(fn (string $state) => $state === 'completed' ? 'Ready for Dev' : $state)
                     ->color('success'),
             ])
             ->filters([
@@ -96,6 +117,21 @@ class DoneTaskResource extends Resource
                     ->relationship('projectModule.project', 'name'),
                 Tables\Filters\SelectFilter::make('module')
                     ->relationship('projectModule', 'name'),
+                Tables\Filters\SelectFilter::make('source_group')
+                    ->relationship('sourceGroup', 'name')
+                    ->label('Source Group')
+                    ->searchable()
+                    ->preload(),
+                Tables\Filters\SelectFilter::make('source')
+                    ->relationship('source', 'name')
+                    ->label('Source')
+                    ->searchable()
+                    ->preload(),
+                Tables\Filters\SelectFilter::make('type')
+                    ->relationship('type', 'name')
+                    ->label('Type')
+                    ->searchable()
+                    ->preload(),
             ])
             ->defaultSort('weight', 'desc');
     }
