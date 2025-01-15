@@ -1,11 +1,18 @@
-<x-filament::page>
-    <form wire:submit.prevent="submit">
+<x-filament-panels::page>
+    <form wire:submit="submit">
         {{ $this->form }}
 
         <div class="mt-4">
             <x-filament::button type="submit">
-                Save Weights
+                Save Evaluations
             </x-filament::button>
         </div>
     </form>
-</x-filament::page>
+
+    <div class="mt-4 p-4 bg-gray-50 rounded-lg">
+        <p class="text-sm text-gray-600">
+            Note: The sum of all weights must be less than or equal to 1.
+            Each weight represents the relative importance of the category in this type.
+        </p>
+    </div>
+</x-filament-panels::page>

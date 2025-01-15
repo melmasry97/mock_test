@@ -2,16 +2,15 @@
 
 namespace App\Filament\User\Resources;
 
-use Filament\Forms;
-use Filament\Tables;
+use App\Filament\User\Resources\ProjectResource\Pages;
 use App\Models\Project;
+use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Tables\Table;
-use App\Models\TypeCategory;
 use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
-use App\Filament\User\Resources\ProjectResource\Pages\ViewProject;
-use App\Filament\User\Resources\ProjectResource\Pages\ListProjects;
+use App\Models\TypeCategory;
 
 class ProjectResource extends Resource
 {
@@ -19,50 +18,35 @@ class ProjectResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    protected static ?string $navigationGroup = 'Projects';
-
-    protected static ?int $navigationSort = 1;
-
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
                 Forms\Components\TextInput::make('name')
                     ->required()
-                    ->disabled()
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->disabled(),
 
                 Forms\Components\Textarea::make('description')
-                    ->disabled()
                     ->maxLength(65535)
-                    ->columnSpanFull(),
+                    ->columnSpanFull()
+                    ->disabled(),
 
-                Forms\Components\TextInput::make('weight')
-                    ->disabled()
-                    ->numeric(),
-
-                Forms\Components\Section::make('Categories To Evaluate')
+                Forms\Components\Section::make('Linked Types')
                     ->schema([
-                        Forms\Components\Placeholder::make('categories')
+                        Forms\Components\Placeholder::make('types')
                             ->content(function ($record) {
-                                return view('filament.components.type-categories-table', [
-                                    'categories' => TypeCategory::whereHas('tasks', function ($query) use ($record) {
-                                        $query->where('project_id', $record->id);
-                                    })
-                                    ->whereDoesntHave('evaluations', function ($query) {
-                                        $query->where('user_id', Auth::id());
-                                    })
-                                    ->get()
-                                    ->map(function ($category) {
-                                        return [
-                                            'id' => $category->id,
-                                            'name' => $category->name,
-                                            'description' => $category->description,
-                                            'average_value' => $category->average_value ?? 'Not evaluated',
-                                            'evaluation_count' => $category->evaluations->count(),
-                                            'edit_url' => ''  // No edit URL needed for user view
-                                        ];
-                                    })
+                                $types = $record->types()
+                                    ->with(['categories' => function ($query) {
+                                        $query->with(['evaluations' => function ($query) {
+                                            $query->where('user_id', Auth::id());
+                                        }]);
+                                    }])
+                                    ->get();
+
+                                return view('filament.resources.project.types-table', [
+                                    'record' => $record,
+                                    'types' => $types
                                 ]);
                             })
                     ])
@@ -82,18 +66,67 @@ class ProjectResource extends Resource
                     ->limit(50)
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('weight')
-                    ->numeric(2)
-                    ->sortable(),
+                Tables\Columns\TextColumn::make('types_count')
+                    ->counts('types')
+                    ->label('Types')
+                    ->badge(),
 
-                Tables\Columns\TextColumn::make('modules_count')
-                    ->counts('modules')
-                    ->label('Modules'),
-
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
+                Tables\Columns\TextColumn::make('evaluation_end_time')
+                    ->label('Evaluation Deadline')
+                    ->dateTime('d M Y H:i')
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->formatStateUsing(function ($state) {
+                        if (!$state) return 'No deadline';
+
+                        $endTime = \Carbon\Carbon::parse($state);
+                        if (now()->isAfter($endTime)) {
+                            return 'Evaluation ended';
+                        }
+
+                        return $endTime->diffForHumans([
+                            'parts' => 2,
+                            'join' => true,
+                        ]);
+                    })
+                    ->badge()
+                    ->color(fn ($state) =>
+                        !$state ? 'gray' :
+                        (now()->isAfter(\Carbon\Carbon::parse($state)) ? 'danger' : 'warning')
+                    ),
+
+                Tables\Columns\TextColumn::make('categories_count')
+                    ->label('Categories')
+                    ->badge()
+                    ->color('success')
+                    ->getStateUsing(function (Project $record) {
+                        return $record->typeCategories()->count();
+                    }),
+
+                Tables\Columns\TextColumn::make('evaluated_categories')
+                    ->label('Evaluated')
+                    ->badge()
+                    ->color('success')
+                    ->getStateUsing(function (Project $record) {
+                        return $record->typeCategories()
+                            ->whereHas('evaluations', function ($query) {
+                                $query->where('user_id', Auth::id());
+                            })
+                            ->count();
+                    }),
+
+                Tables\Columns\TextColumn::make('remaining_categories')
+                    ->label('Remaining')
+                    ->badge()
+                    ->color('warning')
+                    ->getStateUsing(function (Project $record) {
+                        $total = $record->typeCategories()->count();
+                        $evaluated = $record->typeCategories()
+                            ->whereHas('evaluations', function ($query) {
+                                $query->where('user_id', Auth::id());
+                            })
+                            ->count();
+                        return $total - $evaluated;
+                    }),
             ])
             ->filters([
                 //
@@ -104,11 +137,33 @@ class ProjectResource extends Resource
             ->bulkActions([]);
     }
 
+    public static function getRelations(): array
+    {
+        return [
+            //
+        ];
+    }
+
     public static function getPages(): array
     {
         return [
-            'index' => ListProjects::route('/'),
-            'view' => ViewProject::route('/{record}'),
+            'index' => Pages\ListProjects::route('/'),
+            'view' => Pages\ViewProject::route('/{record}'),
+            'evaluate-categories' => Pages\EvaluateCategories::route('/{record}/evaluate-categories/{typeId}'),
         ];
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::whereHas('typeCategories', function ($query) {
+            $query->whereDoesntHave('evaluations', function ($q) {
+                $q->where('user_id', Auth::id());
+            });
+        })->count() ?: null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return static::getNavigationBadge() ? 'warning' : null;
     }
 }

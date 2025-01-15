@@ -16,11 +16,13 @@ class Project extends Model
         'name',
         'description',
         'weight',
-        'category_id'
+        'category_id',
+        'evaluation_end_time'
     ];
 
     protected $casts = [
         'weight' => 'float',
+        'evaluation_end_time' => 'datetime'
     ];
 
     protected static function boot()

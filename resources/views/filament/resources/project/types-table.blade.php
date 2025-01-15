@@ -3,9 +3,6 @@
     use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Str;
 
-    $record = $getRecord();
-    $types = $record->types;
-
     // Pre-calculate evaluations for all types to avoid N+1 queries
     $evaluations = ProjectTypeCategoryEvaluation::where('project_id', $record->id)
         ->where('user_id', Auth::id())
@@ -39,28 +36,33 @@
                         @endif
                     </td>
                     <td class="px-4 py-2 align-middle text-center">
-                        @if($type->categories->count() > 0 && in_array($type->id, $evaluations))
-                            <x-heroicon-s-check-circle class="w-5 h-5 text-success-500 inline"/>
+                        @if(in_array($type->id, $evaluations))
+                            <x-filament::badge color="success">
+                                Evaluated
+                            </x-filament::badge>
+                        @elseif($record->evaluation_end_time && now()->isAfter($record->evaluation_end_time))
+                            <x-filament::badge color="danger">
+                                Evaluation Ended
+                            </x-filament::badge>
+                        @else
+                            <x-filament::badge color="warning">
+                                Pending
+                            </x-filament::badge>
                         @endif
                     </td>
                     <td class="px-4 py-2 align-middle text-end">
                         <div class="flex items-center justify-end gap-2">
-                            @if($type->categories->count() > 0 && !in_array($type->id, $evaluations) && !$type->evaluation_end_time)
-                                <x-filament::button
-                                    size="sm"
-                                    icon="heroicon-m-star"
-                                    wire:click="evaluateCategories({{ $type->id }})"
-                                >
-                                    Evaluate
-                                </x-filament::button>
+                            @if($type->categories->count() > 0 && !in_array($type->id, $evaluations) && (!$record->evaluation_end_time || now()->lt($record->evaluation_end_time)))
+                                <a href="{{ route('filament.user.resources.projects.evaluate-categories', ['record' => $record->id, 'typeId' => $type->id]) }}"
+                                   class="inline-flex items-center justify-center gap-1 font-medium rounded-lg border transition-colors focus:outline-none focus:ring-offset-2 focus:ring-2 focus:ring-inset filament-button min-h-[2rem] px-3 py-1 text-sm text-white shadow focus:ring-white border-transparent bg-primary-600 hover:bg-primary-500 focus:bg-primary-700 focus:ring-offset-primary-700">
+                                    <x-filament::icon
+                                        alias="heroicon-m-star"
+                                        icon="heroicon-m-star"
+                                        class="h-4 w-4"
+                                    />
+                                    <span>Evaluate</span>
+                                </a>
                             @endif
-                            <x-filament::button
-                                size="sm"
-                                color="danger"
-                                wire:click="detachType({{ $type->id }})"
-                            >
-                                Detach
-                            </x-filament::button>
                         </div>
                     </td>
                 </tr>
@@ -74,3 +76,4 @@
         </tbody>
     </table>
 </div>
+

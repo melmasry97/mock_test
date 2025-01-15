@@ -35,6 +35,12 @@ class ProjectResource extends Resource
                     ->dehydrated(false)
                     ->helperText('This value is automatically calculated'),
 
+                Forms\Components\DateTimePicker::make('evaluation_end_time')
+                    ->label('Evaluation End Time')
+                    ->helperText('After this time, users cannot evaluate categories')
+                    ->visible(fn ($livewire) => $livewire instanceof Pages\CreateProject || $livewire instanceof Pages\EditProject)
+                    ->timezone('Asia/Kuwait'),
+
                 Forms\Components\Actions::make([
                     Forms\Components\Actions\Action::make('attach_type')
                         ->label('Attach Type')
@@ -86,6 +92,24 @@ class ProjectResource extends Resource
                 Tables\Columns\TextColumn::make('weight')
                     ->numeric(2)
                     ->sortable(),
+
+                Tables\Columns\TextColumn::make('evaluation_end_time')
+                    ->label('Evaluation Ends')
+                    ->dateTime('d M Y H:i')
+                    ->sortable()
+                    ->formatStateUsing(function ($state) {
+                        if (!$state) return 'No deadline';
+
+                        $endTime = \Carbon\Carbon::parse($state);
+                        if (now()->isAfter($endTime)) {
+                            return 'Evaluation ended';
+                        }
+
+                        return $endTime->diffForHumans([
+                            'parts' => 2,
+                            'join' => true,
+                        ]);
+                    }),
 
                 Tables\Columns\TextColumn::make('types_count')
                     ->counts('types')
