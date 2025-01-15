@@ -188,10 +188,6 @@ class TaskResource extends Resource
                     ->label('Module')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('projectModule.weight')
-                    ->label('Average Module Weight')
-                    ->numeric(2)
-                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('sourceGroup.name')
                     ->label('Req Source Group')
@@ -204,9 +200,14 @@ class TaskResource extends Resource
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('type.name')
-                    ->label('ReqType')
+                    ->label('Req Type')
                     ->sortable()
                     ->searchable(),
+
+                    Tables\Columns\TextColumn::make('projectModule.weight')
+                    ->label('Average Module Weight')
+                    ->numeric(2)
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('rice_score')
                     ->label('RICE Score')

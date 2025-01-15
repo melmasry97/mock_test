@@ -72,11 +72,6 @@ class DoneTaskResource extends Resource
                     ->label('Module')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('projectModule.weight')
-                    ->label('Average Module Weight')
-                    ->numeric(2)
-                    ->sortable(),
-
                 Tables\Columns\TextColumn::make('sourceGroup.name')
                     ->label('Req Source Group')
                     ->sortable()
@@ -91,6 +86,16 @@ class DoneTaskResource extends Resource
                     ->label('ReqType')
                     ->sortable()
                     ->searchable(),
+
+                Tables\Columns\TextColumn::make('projectModule.weight')
+                    ->label('Average Module Weight')
+                    ->numeric(2)
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('type.typeCategory.weight')
+                    ->label('Type Category Weight')
+                    ->numeric(2)
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('rice_score')
                     ->label('RICE Score')
