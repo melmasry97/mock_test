@@ -10,6 +10,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Auth;
 
 class ProjectResource extends Resource
 {
@@ -78,16 +79,25 @@ class ProjectResource extends Resource
                     ->schema([
                         Forms\Components\Placeholder::make('types')
                             ->content(function ($record) {
+                                if (!$record) {
+                                    return 'Save the project first to manage types.';
+                                }
+
+                                $types = $record->types()
+                                    ->with(['categories' => function ($query) {
+                                        $query->with(['evaluations' => function ($query) {
+                                            $query->where('user_id', Auth::id());
+                                        }]);
+                                    }])
+                                    ->get();
+
                                 return view('filament.resources.project.types-table', [
                                     'record' => $record,
-                                    'types' => $record->types()
-                                        ->with(['categories' => function ($query) {
-                                            $query->with('evaluations');
-                                        }])
-                                        ->get()
+                                    'types' => $types
                                 ]);
                             })
                     ])
+                    ->visible(fn ($record) => $record !== null)
                     ->columnSpanFull(),
             ]);
     }
