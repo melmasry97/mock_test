@@ -17,12 +17,14 @@ class Project extends Model
         'description',
         'weight',
         'category_id',
-        'evaluation_end_time'
+        'evaluation_end_time',
+        'module_evaluation_end_time'
     ];
 
     protected $casts = [
         'weight' => 'float',
-        'evaluation_end_time' => 'datetime'
+        'evaluation_end_time' => 'datetime',
+        'module_evaluation_end_time' => 'datetime'
     ];
 
     protected static function boot()
@@ -55,7 +57,7 @@ class Project extends Model
         return $this->belongsTo(Category::class, 'category_id');
     }
 
-    public function modules(): HasMany
+    public function projectModules(): HasMany
     {
         return $this->hasMany(ProjectModule::class);
     }

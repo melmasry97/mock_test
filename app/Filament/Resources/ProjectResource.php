@@ -70,8 +70,17 @@ class ProjectResource extends Resource
 
                 Forms\Components\Section::make('Linked Types')
                     ->schema([
-                        Forms\Components\View::make('filament.resources.project.types-table')
-                            ->columnSpanFull(),
+                        Forms\Components\Placeholder::make('types')
+                            ->content(function ($record) {
+                                return view('filament.resources.project.types-table', [
+                                    'record' => $record,
+                                    'types' => $record->types()
+                                        ->with(['categories' => function ($query) {
+                                            $query->with('evaluations');
+                                        }])
+                                        ->get()
+                                ]);
+                            })
                     ])
                     ->columnSpanFull(),
             ]);
@@ -89,37 +98,87 @@ class ProjectResource extends Resource
                     ->limit(50)
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('weight')
-                    ->numeric(2)
-                    ->sortable(),
+                Tables\Columns\TextColumn::make('types_count')
+                    ->counts('types')
+                    ->label('Types')
+                    ->badge(),
 
-                Tables\Columns\TextColumn::make('evaluation_end_time')
-                    ->label('Evaluation Ends')
+                Tables\Columns\TextColumn::make('project_modules_count')
+                    ->counts('projectModules')
+                    ->label('Modules')
+                    ->badge(),
+
+                Tables\Columns\TextColumn::make('tasks_count')
+                    ->counts('tasks')
+                    ->label('Tasks')
+                    ->badge(),
+
+                Tables\Columns\TextColumn::make('module_evaluation_end_time')
+                    ->label('Module Ends')
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->formatStateUsing(function ($state) {
                         if (!$state) return 'No deadline';
-
                         $endTime = \Carbon\Carbon::parse($state);
-                        if (now()->isAfter($endTime)) {
-                            return 'Evaluation ended';
-                        }
+                        return now()->isAfter($endTime) ? 'Ended' : $endTime->diffForHumans();
+                    })
+                    ->badge()
+                    ->color(fn ($state) =>
+                        !$state ? 'gray' :
+                        (now()->isAfter(\Carbon\Carbon::parse($state)) ? 'danger' : 'warning')
+                    ),
 
-                        return $endTime->diffForHumans([
-                            'parts' => 2,
-                            'join' => true,
-                        ]);
-                    }),
-
-                Tables\Columns\TextColumn::make('types_count')
-                    ->counts('types')
-                    ->label('Types'),
+                Tables\Columns\TextColumn::make('evaluation_end_time')
+                    ->label('Categories Ends')
+                    ->dateTime('d M Y H:i')
+                    ->sortable()
+                    ->formatStateUsing(function ($state) {
+                        if (!$state) return 'No deadline';
+                        $endTime = \Carbon\Carbon::parse($state);
+                        return now()->isAfter($endTime) ? 'Ended' : $endTime->diffForHumans();
+                    })
+                    ->badge()
+                    ->color(fn ($state) =>
+                        !$state ? 'gray' :
+                        (now()->isAfter(\Carbon\Carbon::parse($state)) ? 'danger' : 'warning')
+                    ),
             ])
             ->filters([
                 //
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('force_module_end')
+                    ->label('End Module')
+                    ->icon('heroicon-o-clock')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->action(function (Project $record) {
+                        $record->update([
+                            'module_evaluation_end_time' => now()
+                        ]);
+                        Notification::make()
+                            ->success()
+                            ->title('Module evaluation period has been ended')
+                            ->send();
+                    })
+                    ->visible(fn (Project $record) => $record->module_evaluation_end_time && $record->module_evaluation_end_time->isFuture()),
+
+                Tables\Actions\Action::make('force_category_end')
+                    ->label('End Categories')
+                    ->icon('heroicon-o-clock')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->action(function (Project $record) {
+                        $record->update([
+                            'evaluation_end_time' => now()
+                        ]);
+                        Notification::make()
+                            ->success()
+                            ->title('Category evaluation period has been ended')
+                            ->send();
+                    })
+                    ->visible(fn (Project $record) => $record->evaluation_end_time && $record->evaluation_end_time->isFuture()),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

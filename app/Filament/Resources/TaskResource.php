@@ -13,6 +13,7 @@ use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
+use Filament\Notifications\Notification;
 
 class TaskResource extends Resource
 {
@@ -22,6 +23,8 @@ class TaskResource extends Resource
 
     public static function form(Forms\Form $form): Forms\Form
     {
+        $isAdmin = auth()->user()->is_admin;
+
         return $form
             ->schema([
                 Forms\Components\Select::make('project_id')
@@ -46,37 +49,20 @@ class TaskResource extends Resource
                     ->maxLength(65535)
                     ->columnSpanFull(),
 
-                Forms\Components\Grid::make(3)
+                // Admin-only fields
+                Forms\Components\Grid::make(2)
                     ->schema([
-                        Forms\Components\Select::make('type_id')
-                            ->relationship('type', 'name')
+                        Forms\Components\Select::make('source_group_id')
+                            ->relationship('sourceGroup', 'name')
                             ->searchable()
                             ->preload()
-                            ->live()
-                            ->label('Type')
-                            ->afterStateUpdated(fn (callable $set) => $set('categories', [])),
+                            ->label('Source Group'),
 
-                        Forms\Components\Select::make('categories')
-                            ->relationship(
-                                'categories',
-                                'name',
-                                function (Builder $query, callable $get) {
-                                    $typeId = $get('type_id');
-                                    $query->where('average_value', '>', 0);
-
-                                    if ($typeId) {
-                                        $query->where('type_id', $typeId);
-                                    }
-
-                                    return $query;
-                                }
-                            )
-                            ->multiple()
-                            ->preload()
+                        Forms\Components\Select::make('source_id')
+                            ->relationship('source', 'name')
                             ->searchable()
-                            ->label('Type Categories')
-                            ->helperText('Select from evaluated categories only')
-                            ->disabled(fn (callable $get) => !$get('type_id')),
+                            ->preload()
+                            ->label('Source'),
 
                         Forms\Components\Select::make('status')
                             ->options([
@@ -87,23 +73,21 @@ class TaskResource extends Resource
                             ])
                             ->default('pending')
                             ->required(),
-                    ]),
 
+                        Forms\Components\DateTimePicker::make('evaluation_end_time')
+                            ->label('User Evaluation End Time')
+                            ->helperText('Users can only evaluate the task before this time'),
+                    ])
+                    ->visible($isAdmin),
+
+                // RICE Evaluation Settings - Admin Only
                 Forms\Components\Section::make('RICE Evaluation Settings')
                     ->schema([
-                        Forms\Components\Grid::make(2)
-                            ->schema([
-                                Forms\Components\DateTimePicker::make('rice_evaluation_end_time')
-                                    ->label('Admin RICE Evaluation End Time')
-                                    ->required()
-                                    ->helperText('After this time, the final RICE score will be calculated from admin evaluations')
-                                    ->visible(fn ($record) => !$record?->rice_score),
-
-                                Forms\Components\DateTimePicker::make('evaluation_end_time')
-                                    ->label('User Evaluation End Time')
-                                    ->helperText('Users can only evaluate the task before this time')
-                                    ->visible(fn (string $operation) => $operation === 'edit'),
-                            ]),
+                        Forms\Components\DateTimePicker::make('rice_evaluation_end_time')
+                            ->label('Admin RICE Evaluation End Time')
+                            ->required()
+                            ->helperText('After this time, the final RICE score will be calculated from admin evaluations')
+                            ->visible(fn ($record) => !$record?->rice_score),
 
                         Forms\Components\Placeholder::make('rice_evaluations')
                             ->label('RICE Evaluations')
@@ -128,7 +112,8 @@ class TaskResource extends Resource
                                 ]);
                             })
                             ->visible(fn (string $operation) => $operation === 'edit'),
-                    ]),
+                    ])
+                    ->visible($isAdmin),
 
                 Forms\Components\Section::make('Final RICE Score')
                     ->schema([
@@ -159,44 +144,20 @@ class TaskResource extends Resource
                                     ->disabled()
                                     ->label('Score'),
                             ])
-                            ->visible(fn (string $operation) => $operation === 'edit'),
-                    ]),
+                    ])
+                    ->visible($isAdmin && fn (string $operation) => $operation === 'edit'),
             ]);
     }
 
     public static function table(Tables\Table $table): Tables\Table
     {
+        $isAdmin = auth()->user()->is_admin;
+
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->searchable()
                     ->sortable(),
-
-                Tables\Columns\TextColumn::make('status')
-                    ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'pending' => 'gray',
-                        'evaluating' => 'info',
-                        'approved' => 'warning',
-                        'completed' => 'success',
-                        default => 'gray',
-                    }),
-
-                Tables\Columns\TextColumn::make('rice_evaluation_remaining_time')
-                    ->label('RICE Evaluation Time')
-                    ->badge()
-                    ->color(fn ($state) => $state === 'Ended' ? 'danger' : 'success')
-                    ->sortable(query: function (Builder $query, string $direction): Builder {
-                        return $query->orderBy('rice_evaluation_end_time', $direction);
-                    }),
-
-                Tables\Columns\TextColumn::make('user_evaluation_remaining_time')
-                    ->label('User Evaluation Time')
-                    ->badge()
-                    ->color(fn ($state) => $state === 'Ended' ? 'danger' : 'success')
-                    ->sortable(query: function (Builder $query, string $direction): Builder {
-                        return $query->orderBy('evaluation_end_time', $direction);
-                    }),
 
                 Tables\Columns\TextColumn::make('project.name')
                     ->searchable()
@@ -208,34 +169,56 @@ class TaskResource extends Resource
                     ->sortable()
                     ->label('Module'),
 
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'pending' => 'gray',
+                        'evaluating' => 'info',
+                        'approved' => 'warning',
+                        'completed' => 'success',
+                        default => 'gray',
+                    }),
+
+                // Admin-only columns
                 Tables\Columns\TextColumn::make('sourceGroup.name')
                     ->searchable()
                     ->sortable()
-                    ->toggleable(),
+                    ->visible($isAdmin),
 
                 Tables\Columns\TextColumn::make('source.name')
                     ->searchable()
                     ->sortable()
-                    ->toggleable(),
+                    ->visible($isAdmin),
 
-                Tables\Columns\TextColumn::make('type.name')
-                    ->searchable()
-                    ->sortable()
-                    ->toggleable(),
+                Tables\Columns\TextColumn::make('rice_evaluation_remaining_time')
+                    ->label('RICE Evaluation Time')
+                    ->badge()
+                    ->color(fn ($state) => $state === 'Ended' ? 'danger' : 'success')
+                    ->sortable(query: function (Builder $query, string $direction): Builder {
+                        return $query->orderBy('rice_evaluation_end_time', $direction);
+                    })
+                    ->visible($isAdmin),
+
+                Tables\Columns\TextColumn::make('user_evaluation_remaining_time')
+                    ->label('User Evaluation Time')
+                    ->badge()
+                    ->color(fn ($state) => $state === 'Ended' ? 'danger' : 'success')
+                    ->sortable(query: function (Builder $query, string $direction): Builder {
+                        return $query->orderBy('evaluation_end_time', $direction);
+                    })
+                    ->visible($isAdmin),
 
                 Tables\Columns\TextColumn::make('rice_score')
                     ->numeric(2)
                     ->sortable()
-                    ->toggleable(),
+                    ->visible($isAdmin),
 
                 Tables\Columns\TextColumn::make('overall_evaluation_value')
                     ->numeric(2)
                     ->sortable()
-                    ->toggleable(),
+                    ->visible($isAdmin),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('state')
-                    ->options(TaskState::getLabels()),
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
                         'pending' => 'Pending',
@@ -246,13 +229,14 @@ class TaskResource extends Resource
                 Tables\Filters\SelectFilter::make('project')
                     ->relationship('project', 'name'),
                 Tables\Filters\SelectFilter::make('source_group')
-                    ->relationship('sourceGroup', 'name'),
+                    ->relationship('sourceGroup', 'name')
+                    ->visible($isAdmin),
                 Tables\Filters\SelectFilter::make('source')
-                    ->relationship('source', 'name'),
-                Tables\Filters\SelectFilter::make('type')
-                    ->relationship('type', 'name'),
+                    ->relationship('source', 'name')
+                    ->visible($isAdmin),
             ])
             ->actions([
+                Tables\Actions\EditAction::make(),
                 Tables\Actions\Action::make('evaluate_rice')
                     ->form([
                         Forms\Components\Grid::make(4)
@@ -289,15 +273,56 @@ class TaskResource extends Resource
 
                         $record->calculateFinalRiceScore();
                     })
-                    ->visible(fn (Task $record): bool => $record->canBeEvaluatedByAdmin())
+                    ->visible(fn (Task $record): bool => $record->canBeEvaluatedByAdmin() && auth()->user()->is_admin)
                     ->modalHeading('Evaluate RICE Score')
                     ->icon('heroicon-o-calculator'),
 
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('force_rice_end')
+                    ->label('End RICE')
+                    ->icon('heroicon-o-clock')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->action(function (Task $record) {
+                        $record->update([
+                            'rice_evaluation_end_time' => now()
+                        ]);
+                        $record->calculateFinalRiceScore();
+                        Notification::make()
+                            ->success()
+                            ->title('RICE evaluation period has been ended')
+                            ->send();
+                    })
+                    ->visible(fn (Task $record) =>
+                        auth()->user()->is_admin &&
+                        $record->rice_evaluation_end_time &&
+                        $record->rice_evaluation_end_time->isFuture()
+                    ),
+
+                Tables\Actions\Action::make('force_evaluation_end')
+                    ->label('End Evaluation')
+                    ->icon('heroicon-o-clock')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->action(function (Task $record) {
+                        $record->update([
+                            'evaluation_end_time' => now()
+                        ]);
+                        $record->calculateOverallEvaluation();
+                        Notification::make()
+                            ->success()
+                            ->title('User evaluation period has been ended')
+                            ->send();
+                    })
+                    ->visible(fn (Task $record) =>
+                        auth()->user()->is_admin &&
+                        $record->evaluation_end_time &&
+                        $record->evaluation_end_time->isFuture()
+                    ),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->visible($isAdmin),
                 ]),
             ]);
     }

@@ -11,6 +11,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
 use App\Models\TypeCategory;
+use App\Models\ProjectTypeCategoryEvaluation;
 
 class ProjectResource extends Resource
 {
@@ -99,7 +100,7 @@ class ProjectResource extends Resource
                     ->badge()
                     ->color('success')
                     ->getStateUsing(function (Project $record) {
-                        return $record->typeCategories()->count();
+                        return $record->types()->whereHas('categories')->count();
                     }),
 
                 Tables\Columns\TextColumn::make('evaluated_categories')
@@ -107,11 +108,10 @@ class ProjectResource extends Resource
                     ->badge()
                     ->color('success')
                     ->getStateUsing(function (Project $record) {
-                        return $record->typeCategories()
-                            ->whereHas('evaluations', function ($query) {
-                                $query->where('user_id', Auth::id());
-                            })
-                            ->count();
+                        return ProjectTypeCategoryEvaluation::where('project_id', $record->id)
+                            ->where('user_id', Auth::id())
+                            ->distinct('type_id')
+                            ->count('type_id');
                     }),
 
                 Tables\Columns\TextColumn::make('remaining_categories')
@@ -119,13 +119,12 @@ class ProjectResource extends Resource
                     ->badge()
                     ->color('warning')
                     ->getStateUsing(function (Project $record) {
-                        $total = $record->typeCategories()->count();
-                        $evaluated = $record->typeCategories()
-                            ->whereHas('evaluations', function ($query) {
-                                $query->where('user_id', Auth::id());
-                            })
-                            ->count();
-                        return $total - $evaluated;
+                        $totalTypes = $record->types()->whereHas('categories')->count();
+                        $evaluatedTypes = ProjectTypeCategoryEvaluation::where('project_id', $record->id)
+                            ->where('user_id', Auth::id())
+                            ->distinct('type_id')
+                            ->count('type_id');
+                        return $totalTypes - $evaluatedTypes;
                     }),
             ])
             ->filters([
