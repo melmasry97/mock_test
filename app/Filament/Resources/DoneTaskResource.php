@@ -58,32 +58,46 @@ class DoneTaskResource extends Resource
                 Tables\Columns\TextColumn::make('id')
                     ->label('Task ID')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('projectModule.project.name')
-                    ->label('Project Name')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('projectModule.name')
-                    ->label('Project Module')
-                    ->sortable(),
+
                 Tables\Columns\TextColumn::make('name')
                     ->label('Task Name')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('description')
-                    ->label('Task Description')
-                    ->limit(50),
+
+                Tables\Columns\TextColumn::make('projectModule.project.name')
+                    ->label('Project')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('projectModule.name')
+                    ->label('Module')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('rice_score')
+                    ->label('RICE Score')
+                    ->numeric(2)
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('overall_evaluation_value')
+                    ->label('Fibonacci Weight')
+                    ->numeric(2)
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('weight')
+                    ->label('Final Weight')
+                    ->numeric(2)
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
+                    ->color('success'),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('project')
+                    ->relationship('projectModule.project', 'name'),
+                Tables\Filters\SelectFilter::make('module')
+                    ->relationship('projectModule', 'name'),
             ])
-            ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->defaultSort('weight', 'desc');
     }
 
     public static function getRelations(): array
@@ -104,7 +118,8 @@ class DoneTaskResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->where('state', TaskState::DONE);
+        return parent::getEloquentQuery()
+            ->where('status', 'completed');
     }
 
     public static function getModelLabel(): string

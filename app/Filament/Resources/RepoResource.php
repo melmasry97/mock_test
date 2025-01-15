@@ -59,32 +59,74 @@ class RepoResource extends Resource
                 Tables\Columns\TextColumn::make('id')
                     ->label('Task ID')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('projectModule.project.name')
-                    ->label('Project Name')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('projectModule.name')
-                    ->label('Project Module')
-                    ->sortable(),
+
                 Tables\Columns\TextColumn::make('name')
                     ->label('Task Name')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('description')
-                    ->label('Task Description')
-                    ->limit(50),
+
+                Tables\Columns\TextColumn::make('projectModule.project.name')
+                    ->label('Project')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('projectModule.name')
+                    ->label('Module')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('rice_score')
+                    ->label('RICE Score')
+                    ->numeric(2)
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('overall_evaluation_value')
+                    ->label('Fibonacci Weight')
+                    ->numeric(2)
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('weight')
+                    ->label('Final Weight')
+                    ->numeric(2)
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('user_evaluation_remaining_time')
+                    ->label('Evaluation Time')
+                    ->badge()
+                    ->color(fn ($state) => $state === 'Ended' ? 'danger' : 'success'),
+
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
+                    ->color('warning'),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('project')
+                    ->relationship('projectModule.project', 'name'),
+                Tables\Filters\SelectFilter::make('module')
+                    ->relationship('projectModule', 'name'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                // Evaluation button removed
+                Tables\Actions\Action::make('force_evaluation_end')
+                    ->label('End User Evaluation')
+                    ->icon('heroicon-o-clock')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalDescription('Are you sure you want to end the user evaluation period? This will calculate the final weight.')
+                    ->action(function (Task $record) {
+                        $record->update([
+                            'evaluation_end_time' => now()
+                        ]);
+                        $record->calculateOverallEvaluation();
+                        $record->calculateFinalWeight();
+                        Notification::make()
+                            ->success()
+                            ->title('User evaluation period has been ended and final weight calculated')
+                            ->send();
+                    })
+                    ->visible(fn (Task $record) =>
+                        $record->evaluation_end_time &&
+                        $record->evaluation_end_time->isFuture()
+                    ),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->defaultSort('id', 'desc');
     }
 
     public static function getRelations(): array
@@ -105,7 +147,8 @@ class RepoResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->where('state', TaskState::REPO);
+        return parent::getEloquentQuery()
+            ->where('status', 'approved');
     }
 
     public static function shouldRegisterNavigation(): bool

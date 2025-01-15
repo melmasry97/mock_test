@@ -190,117 +190,86 @@ class TaskResource extends Resource
                     ->color(fn (string $state): string => match ($state) {
                         'pending' => 'gray',
                         'evaluating' => 'info',
-                        'approved' => 'warning',
-                        'completed' => 'success',
                         default => 'gray',
                     }),
 
-                // Admin-only columns
-                Tables\Columns\TextColumn::make('sourceGroup.name')
-                    ->searchable()
-                    ->sortable()
-                    ->visible(fn() => auth()->user()->isAdmin()),
-
-                Tables\Columns\TextColumn::make('source.name')
-                    ->searchable()
-                    ->sortable()
-                    ->visible(fn() => auth()->user()->isAdmin()),
-
                 Tables\Columns\TextColumn::make('rice_evaluation_remaining_time')
-                    ->label('RICE Evaluation Time')
+                    ->label('RICE Time Remaining')
                     ->badge()
-                    ->color(fn ($state) => $state === 'Ended' ? 'danger' : 'success')
-                    ->sortable(query: function (Builder $query, string $direction): Builder {
-                        return $query->orderBy('rice_evaluation_end_time', $direction);
-                    })
-                    ->visible(fn() => auth()->user()->isAdmin()),
-
-                Tables\Columns\TextColumn::make('user_evaluation_remaining_time')
-                    ->label('User Evaluation Time')
-                    ->badge()
-                    ->color(fn ($state) => $state === 'Ended' ? 'danger' : 'success')
-                    ->sortable(query: function (Builder $query, string $direction): Builder {
-                        return $query->orderBy('evaluation_end_time', $direction);
-                    })
-                    ->visible(fn() => auth()->user()->isAdmin()),
+                    ->color(fn ($state) => $state === 'Ended' ? 'danger' : 'warning'),
 
                 Tables\Columns\TextColumn::make('rice_score')
+                    ->label('RICE Score')
                     ->numeric(2)
-                    ->sortable()
-                    ->visible(fn() => auth()->user()->isAdmin()),
-
-                Tables\Columns\TextColumn::make('overall_evaluation_value')
-                    ->numeric(2)
-                    ->sortable()
-                    ->visible(fn() => auth()->user()->isAdmin()),
-
-                Tables\Columns\TextColumn::make('weight')
-                    ->numeric(2)
-                    ->sortable()
-                    ->visible(fn() => auth()->user()->isAdmin()),
+                    ->sortable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
                         'pending' => 'Pending',
-                        'approved' => 'Approved',
                         'evaluating' => 'Evaluating',
-                        'completed' => 'Completed',
-                    ]),
+                    ])
+                    ->default('pending'),
                 Tables\Filters\SelectFilter::make('project')
                     ->relationship('project', 'name'),
-                Tables\Filters\SelectFilter::make('source_group')
-                    ->relationship('sourceGroup', 'name')
-                    ->visible(fn() => auth()->user()->isAdmin()),
-                Tables\Filters\SelectFilter::make('source')
-                    ->relationship('source', 'name')
-                    ->visible(fn() => auth()->user()->isAdmin()),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\Action::make('evaluate_rice')
+                    ->label('RICE Evaluate')
+                    ->icon('heroicon-o-star')
                     ->form([
-                        Forms\Components\Grid::make(4)
+                        Forms\Components\Grid::make(2)
                             ->schema([
                                 Forms\Components\Select::make('reach')
-                                    ->label('Reach (R)')
-                                    ->options([1 => 1, 3 => 3, 4 => 4, 6 => 6, 8 => 8, 10 => 10])
+                                    ->label('Reach')
+                                    ->options([
+                                        1 => '1 - Very Low',
+                                        2 => '2 - Low',
+                                        3 => '3 - Medium',
+                                        4 => '4 - High',
+                                        5 => '5 - Very High',
+                                    ])
                                     ->required(),
-
                                 Forms\Components\Select::make('impact')
-                                    ->label('Impact (I)')
-                                    ->options([1 => 1, 3 => 3, 4 => 4, 6 => 6, 8 => 8, 10 => 10])
+                                    ->label('Impact')
+                                    ->options([
+                                        1 => '1 - Very Low',
+                                        2 => '2 - Low',
+                                        3 => '3 - Medium',
+                                        4 => '4 - High',
+                                        5 => '5 - Very High',
+                                    ])
                                     ->required(),
-
                                 Forms\Components\Select::make('confidence')
-                                    ->label('Confidence (C)')
-                                    ->options([1 => 1, 3 => 3, 4 => 4, 6 => 6, 8 => 8, 10 => 10])
+                                    ->label('Confidence')
+                                    ->options([
+                                        1 => '1 - Very Low',
+                                        2 => '2 - Low',
+                                        3 => '3 - Medium',
+                                        4 => '4 - High',
+                                        5 => '5 - Very High',
+                                    ])
                                     ->required(),
-
                                 Forms\Components\Select::make('effort')
-                                    ->label('Effort (E)')
-                                    ->options([1 => 1, 3 => 3, 5 => 5, 7 => 7, 10 => 10])
+                                    ->label('Effort')
+                                    ->options([
+                                        1 => '1 - Very High',
+                                        2 => '2 - High',
+                                        3 => '3 - Medium',
+                                        4 => '4 - Low',
+                                        5 => '5 - Very Low',
+                                    ])
                                     ->required(),
                             ]),
                     ])
-                    ->action(function (array $data, Task $record): void {
+                    ->action(function (Task $record, array $data): void {
                         $record->riceEvaluations()->create([
                             'user_id' => auth()->id(),
-                            'reach' => $data['reach'],
-                            'impact' => $data['impact'],
-                            'confidence' => $data['confidence'],
-                            'effort' => $data['effort'],
+                            ...array_map('intval', $data)
                         ]);
-
-                        $record->calculateFinalRiceScore();
                     })
-                    ->visible(fn (Task $record): bool =>
-                        $record->canBeEvaluatedByAdmin() &&
-                        auth()->user()->isAdmin()
-                    )
-                    ->modalHeading('Evaluate RICE Score')
-                    ->icon('heroicon-o-calculator'),
-
+                    ->visible(fn (Task $record) => $record->canBeEvaluatedByAdmin()),
                 Tables\Actions\Action::make('force_rice_end')
                     ->label('End RICE')
                     ->icon('heroicon-o-clock')
@@ -317,37 +286,9 @@ class TaskResource extends Resource
                             ->send();
                     })
                     ->visible(fn (Task $record) =>
-                        auth()->user()->isAdmin() &&
                         $record->rice_evaluation_end_time &&
                         $record->rice_evaluation_end_time->isFuture()
                     ),
-
-                Tables\Actions\Action::make('force_evaluation_end')
-                    ->label('End Evaluation')
-                    ->icon('heroicon-o-clock')
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->action(function (Task $record) {
-                        $record->update([
-                            'evaluation_end_time' => now()
-                        ]);
-                        $record->calculateOverallEvaluation();
-                        Notification::make()
-                            ->success()
-                            ->title('User evaluation period has been ended')
-                            ->send();
-                    })
-                    ->visible(fn (Task $record) =>
-                        auth()->user()->isAdmin() &&
-                        $record->evaluation_end_time &&
-                        $record->evaluation_end_time->isFuture()
-                    ),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
-                        ->visible(fn() => auth()->user()->isAdmin()),
-                ]),
             ]);
     }
 
@@ -365,5 +306,11 @@ class TaskResource extends Resource
             'create' => Pages\CreateTask::route('/create'),
             'edit' => Pages\EditTask::route('/{record}/edit'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->whereIn('status', ['pending', 'evaluating']);
     }
 }
