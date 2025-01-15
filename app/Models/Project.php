@@ -27,25 +27,23 @@ class Project extends Model
     {
         parent::boot();
 
-        // When types are attached to a project
-        static::$dispatcher->listen('eloquent.attached: ' . static::class . '.types', function ($project, $ids) {
-            foreach ($ids as $typeId) {
-                $type = Type::find($typeId);
-                foreach ($type->categories as $category) {
-                    $project->typeCategories()->attach($category->id, [
-                        'type_id' => $typeId,
-                        'weight' => 0
-                    ]);
-                }
-            }
-        });
+        // Listen for the types being synced
+        static::$dispatcher->listen('eloquent.attached: *', function ($event, $models) {
+            if (str_contains($event, 'App\Models\Project.types')) {
+                [$model, $relationIds] = $models;
 
-        // When types are detached from a project
-        static::$dispatcher->listen('eloquent.detached: ' . static::class . '.types', function ($project, $ids) {
-            foreach ($ids as $typeId) {
-                $project->typeCategories()
-                    ->wherePivot('type_id', $typeId)
-                    ->detach();
+                foreach ($relationIds as $typeId) {
+                    $type = Type::find($typeId);
+                    if ($type) {
+                        $defaultWeight = 1 / max(1, $type->categories->count());
+                        foreach ($type->categories as $category) {
+                            $model->typeCategories()->attach($category->id, [
+                                'type_id' => $typeId,
+                                'weight' => $defaultWeight
+                            ]);
+                        }
+                    }
+                }
             }
         });
     }
@@ -73,7 +71,9 @@ class Project extends Model
     public function types(): BelongsToMany
     {
         return $this->belongsToMany(Type::class, 'project_type', 'project_id', 'type_id')
-            ->withTimestamps();
+            ->withTimestamps()
+            ->withPivot(['created_at', 'updated_at'])
+            ->using(ProjectType::class);
     }
 
     public function typeCategories(): BelongsToMany

@@ -9,6 +9,7 @@ use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Notifications\Notification;
 
 class ProjectResource extends Resource
 {
@@ -34,39 +35,37 @@ class ProjectResource extends Resource
                     ->dehydrated(false)
                     ->helperText('This value is automatically calculated'),
 
-                Forms\Components\Section::make('Types')
-                    ->schema([
-                        Forms\Components\Actions::make([
-                            Forms\Components\Actions\Action::make('attach_type')
-                                ->label('Attach Type')
-                                ->icon('heroicon-m-plus')
-                                ->modalHeading('Attach Type to Project')
-                                ->form([
-                                    Forms\Components\Select::make('type_id')
-                                        ->label('Type')
-                                        ->options(function (Project $record) {
-                                            return Type::whereDoesntHave('projects', function ($query) use ($record) {
-                                                $query->where('projects.id', $record->id);
-                                            })->pluck('name', 'id');
-                                        })
-                                        ->required()
-                                        ->searchable(),
-                                ])
-                                ->action(function (array $data, $record): void {
-                                    $record->types()->attach($data['type_id']);
+                Forms\Components\Actions::make([
+                    Forms\Components\Actions\Action::make('attach_type')
+                        ->label('Attach Type')
+                        ->icon('heroicon-m-plus')
+                        ->modalHeading('Attach Type to Project')
+                        ->form([
+                            Forms\Components\Select::make('type_id')
+                                ->label('Type')
+                                ->options(function (Project $record) {
+                                    return Type::whereDoesntHave('projects', function ($query) use ($record) {
+                                        $query->where('projects.id', $record->id);
+                                    })->pluck('name', 'id');
                                 })
-                                ->visible(fn ($record) => $record !== null),
-                        ]),
+                                ->required()
+                                ->searchable(),
+                        ])
+                        ->action(function (array $data, $record): void {
+                            $record->types()->attach($data['type_id']);
 
-                        Forms\Components\Section::make('Linked Types')
-                            ->schema([
-                                Forms\Components\Actions::make([
-                                    Forms\Components\Actions\Action::make('evaluate_categories')
-                                        ->hidden(),
-                                ]),
-                                Forms\Components\View::make('filament.resources.project.types-table')
-                                    ->columnSpanFull(),
-                            ]),
+                            Notification::make()
+                                ->success()
+                                ->title('Type attached successfully')
+                                ->send();
+                        })
+                        ->visible(fn ($record) => $record !== null),
+                ])->columnSpanFull(),
+
+                Forms\Components\Section::make('Linked Types')
+                    ->schema([
+                        Forms\Components\View::make('filament.resources.project.types-table')
+                            ->columnSpanFull(),
                     ])
                     ->columnSpanFull(),
             ]);
@@ -118,6 +117,7 @@ class ProjectResource extends Resource
             'index' => Pages\ListProjects::route('/'),
             'create' => Pages\CreateProject::route('/create'),
             'edit' => Pages\EditProject::route('/{record}/edit'),
+            'evaluate-categories' => Pages\EvaluateCategories::route('/{record}/evaluate-categories/{typeId}'),
         ];
     }
 }
