@@ -150,4 +150,26 @@ class Task extends Model
             $this->save();
         }
     }
+
+    public function calculateFinalWeight(): void
+    {
+        if ($this->evaluation_end_time && $this->evaluation_end_time->isPast()) {
+            // Get module weight
+            $moduleWeight = $this->projectModule->weight ?? 0;
+
+            // Get RICE score
+            $riceScore = $this->rice_score ?? 0;
+
+            // Get Fibonacci weight from user evaluations
+            $fibonacciWeight = $this->overall_evaluation_value ?? 0;
+
+            // Get average category weight
+            $categoryWeight = $this->categories->avg('weight') ?? 0;
+
+            // Calculate final weight
+            $this->weight = ($moduleWeight + $riceScore + $fibonacciWeight + $categoryWeight) / 4;
+            $this->status = 'completed';
+            $this->save();
+        }
+    }
 }
