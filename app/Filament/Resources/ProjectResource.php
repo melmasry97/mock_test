@@ -114,6 +114,10 @@ class ProjectResource extends Resource
                     ->limit(50)
                     ->searchable(),
 
+                Tables\Columns\TextColumn::make('weight')
+                    ->numeric(2)
+                    ->sortable(),
+
                 Tables\Columns\TextColumn::make('types_count')
                     ->counts('types')
                     ->label('Types')
