@@ -24,8 +24,9 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        $schedule->command('app:check-rice-deadlines')->everyMinute();
-        $schedule->command('app:check-user-deadlines')->everyMinute();
+        $schedule->command('evaluation:check-end-times')
+            ->everyMinute()
+            ->withoutOverlapping();
     }
 
     /**
@@ -33,8 +34,10 @@ class Kernel extends ConsoleKernel
      *
      * @return void
      */
-    protected function commands()
+    protected function commands(): void
     {
-        //
+        $this->load(__DIR__.'/Commands');
+
+        require base_path('routes/console.php');
     }
 }
