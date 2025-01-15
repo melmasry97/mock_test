@@ -25,20 +25,6 @@ class TypeResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('project_id')
-                    ->relationship('project', 'name')
-                    ->required()
-                    ->searchable()
-                    ->preload()
-                    ->createOptionForm([
-                        Forms\Components\TextInput::make('name')
-                            ->required()
-                            ->maxLength(255),
-                        Forms\Components\Textarea::make('description')
-                            ->maxLength(65535),
-                    ])
-                    ->label('Project'),
-
                 Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255)
@@ -55,11 +41,6 @@ class TypeResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('project.name')
-                    ->searchable()
-                    ->sortable()
-                    ->label('Project'),
-
                 Tables\Columns\TextColumn::make('name')
                     ->searchable()
                     ->sortable()
@@ -74,14 +55,18 @@ class TypeResource extends Resource
                     ->counts('categories')
                     ->label('Categories'),
 
+                Tables\Columns\TextColumn::make('projects_count')
+                    ->counts('projects')
+                    ->label('Projects'),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('project')
-                    ->relationship('project', 'name')
+                Tables\Filters\SelectFilter::make('projects')
+                    ->relationship('projects', 'name')
                     ->searchable()
                     ->preload()
                     ->label('Project'),
