@@ -224,7 +224,6 @@ class TaskResource extends Resource
                                 Forms\Components\Select::make('reach')
                                     ->label('Reach (R)')
                                     ->options([1 => 1, 3 => 3, 4 => 4, 6 => 6, 8 => 8, 10 => 10])
-
                                     ->required(),
                                 Forms\Components\Select::make('impact')
                                     ->label('Impact (I)')
@@ -246,7 +245,10 @@ class TaskResource extends Resource
                             ...array_map('intval', $data)
                         ]);
                     })
-                    ->visible(fn (Task $record) => $record->canBeEvaluatedByAdmin()),
+                    ->visible(fn (Task $record) =>
+                        $record->canBeEvaluatedByAdmin() &&
+                        !$record->riceEvaluations()->where('user_id', auth()->id())->exists()
+                    ),
                 Tables\Actions\Action::make('force_rice_end')
                     ->label('End RICE')
                     ->icon('heroicon-o-clock')
