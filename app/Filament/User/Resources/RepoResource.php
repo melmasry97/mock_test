@@ -16,7 +16,11 @@ class RepoResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-inbox-stack';
 
-    protected static ?string $navigationLabel = 'Repository';
+    protected static ?string $navigationGroup = 'Requirement Tasks';
+
+    protected static ?string $navigationLabel = 'Approved Tasks';
+
+    protected static ?int $navigationSort = 2;
 
     public static function getEloquentQuery(): Builder
     {

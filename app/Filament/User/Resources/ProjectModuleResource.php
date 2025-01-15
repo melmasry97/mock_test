@@ -20,6 +20,8 @@ class ProjectModuleResource extends Resource
 
     protected static ?string $navigationGroup = 'Projects';
 
+    protected static ?string $navigationLabel = 'Project Modules';
+
     protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form

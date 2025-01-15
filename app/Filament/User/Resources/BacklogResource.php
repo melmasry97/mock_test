@@ -18,7 +18,11 @@ class BacklogResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-archive-box';
 
-    protected static ?string $navigationLabel = 'Backlog';
+    protected static ?string $navigationGroup = 'Requirement Tasks';
+
+    protected static ?string $navigationLabel = 'Requirement Tasks Backlog';
+
+    protected static ?int $navigationSort = 3;
 
     public static function getEloquentQuery(): Builder
     {
