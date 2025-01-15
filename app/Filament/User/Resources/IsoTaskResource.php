@@ -19,7 +19,7 @@ class IsoTaskResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
 
-    protected static ?string $navigationLabel = 'ISO QAs';
+    protected static ?string $navigationLabel = 'ISO25010 QAs';
 
     public static function form(Form $form): Form
     {
@@ -29,21 +29,20 @@ class IsoTaskResource extends Resource
                     ->required()
                     ->maxLength(255)
                     ->disabled(),
-                Forms\Components\TextInput::make('weight')
-                    ->required()
-                    ->numeric()
-                    ->step(0.1)
-                    ->rules(['numeric', 'min:-100', 'max:100']) // Validation rules for min and max
-                    ->disabled(),
                 Forms\Components\Textarea::make('description')
                     ->maxLength(65535)
                     ->columnSpanFull()
                     ->disabled(),
                 Forms\Components\Select::make('project_id')
                     ->relationship('project', 'name')
-                    ->required()
+                    ->nullable()
+                    ->disabled(),
+                Forms\Components\TextInput::make('weight')
+                    ->nullable()
+                    ->numeric()
                     ->disabled(),
                 Forms\Components\DatePicker::make('end_date')
+                    ->nullable()
                     ->disabled(),
             ]);
     }
@@ -54,35 +53,9 @@ class IsoTaskResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('weight')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('project.name')
-                    ->label('Project')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('end_date')
-                    ->date()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('your_evaluation')
-                    ->label('Your Evaluation')
-                    ->getStateUsing(function (IsoTask $record) {
-                        $evaluation = $record->evaluations()->where('user_id', Auth::id())->first();
-                        return $evaluation ? $evaluation->weight : 'Not evaluated';
-                    }),
-                Tables\Columns\TextColumn::make('average_evaluation')
-                    ->label('Average Evaluation')
-                    ->getStateUsing(function (IsoTask $record) {
-                        $evaluations = $record->evaluations;
-                        if ($evaluations->isEmpty()) {
-                            return 'No evaluations';
-                        }
-                        $average = $evaluations->avg('weight');
-                        return number_format($average, 2);
-                    }),
-                Tables\Columns\TextColumn::make('total_evaluation')
-                    ->label('Total Evaluation')
-                    ->getStateUsing(function (IsoTask $record) {
-                        return number_format($record->evaluations->sum('weight'), 3); // Format to 3 decimal places
-                    }),
+                Tables\Columns\TextColumn::make('description')
+                    ->limit(50)
+                    ->searchable(),
             ])
             ->filters([
                 //
@@ -95,26 +68,23 @@ class IsoTaskResource extends Resource
                     ->modalSubmitActionLabel('Save Evaluation')
                     ->modalIcon('heroicon-o-star')
                     ->form([
-                        Forms\Components\TextInput::make('weight') // Changed from Select to TextInput
+                        Forms\Components\TextInput::make('weight')
                             ->required()
-                            ->numeric() // Ensure it accepts numeric values
-                            ->step(0.1) // Allow decimal input
-                            ->rules(['numeric', 'min:-100', 'max:100']), // Validation rules for min and max
+                            ->numeric()
+                            ->step(0.1)
+                            ->rules(['numeric', 'min:-100', 'max:100']),
                     ])
                     ->action(function (IsoTask $record, array $data): void {
-                        // Calculate the user's evaluation based on the provided formula
                         $userEvaluation = ($record->weight / 100) * $data['weight'];
-
                         $record->evaluations()->updateOrCreate(
                             ['user_id' => Auth::id()],
-                            ['weight' => $userEvaluation] // Use the calculated evaluation
+                            ['weight' => $userEvaluation]
                         );
                     })
                     ->visible(function (IsoTask $record): bool {
                         $endDate = Carbon::parse($record->end_date);
                         $today = Carbon::today();
                         $userHasEvaluated = $record->evaluations()->where('user_id', Auth::id())->exists();
-
                         return $today->lte($endDate) && !$userHasEvaluated;
                     }),
             ])

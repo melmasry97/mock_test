@@ -19,6 +19,6 @@ class ListIsoTasks extends ListRecords
 
     public function getTitle(): string
     {
-        return 'ISO QAs';
+        return 'ISO25010 QAs';
     }
 }
