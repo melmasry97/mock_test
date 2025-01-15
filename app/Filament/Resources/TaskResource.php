@@ -171,19 +171,47 @@ class TaskResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('id')
+                    ->label('Task ID')
+                    ->sortable(),
+
                 Tables\Columns\TextColumn::make('name')
+                    ->label('Task Name')
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('project.name')
-                    ->searchable()
-                    ->sortable()
-                    ->label('Project'),
+                Tables\Columns\TextColumn::make('projectModule.project.name')
+                    ->label('Project')
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('projectModule.name')
-                    ->searchable()
+                    ->label('Module')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('projectModule.weight')
+                    ->label('Average Module Weight')
+                    ->numeric(2)
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('sourceGroup.name')
+                    ->label('Req Source Group')
                     ->sortable()
-                    ->label('Module'),
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('source.name')
+                    ->label('Req Source')
+                    ->sortable()
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('type.name')
+                    ->label('ReqType')
+                    ->sortable()
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('rice_score')
+                    ->label('RICE Score')
+                    ->numeric(2)
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
@@ -197,11 +225,6 @@ class TaskResource extends Resource
                     ->label('RICE Time Remaining')
                     ->badge()
                     ->color(fn ($state) => $state === 'Ended' ? 'danger' : 'warning'),
-
-                Tables\Columns\TextColumn::make('rice_score')
-                    ->label('RICE Score')
-                    ->numeric(2)
-                    ->sortable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
@@ -211,7 +234,24 @@ class TaskResource extends Resource
                     ])
                     ->default('pending'),
                 Tables\Filters\SelectFilter::make('project')
-                    ->relationship('project', 'name'),
+                    ->relationship('projectModule.project', 'name'),
+                Tables\Filters\SelectFilter::make('module')
+                    ->relationship('projectModule', 'name'),
+                Tables\Filters\SelectFilter::make('source_group')
+                    ->relationship('sourceGroup', 'name')
+                    ->label('Source Group')
+                    ->searchable()
+                    ->preload(),
+                Tables\Filters\SelectFilter::make('source')
+                    ->relationship('source', 'name')
+                    ->label('Source')
+                    ->searchable()
+                    ->preload(),
+                Tables\Filters\SelectFilter::make('type')
+                    ->relationship('type', 'name')
+                    ->label('Type')
+                    ->searchable()
+                    ->preload(),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
