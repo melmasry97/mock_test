@@ -9,6 +9,7 @@ use App\Events\CategoryEvaluationEnded;
 use App\Listeners\CalculateFinalRiceScore;
 use App\Listeners\CalculateFinalModuleScore;
 use App\Listeners\CalculateFinalCategoryScore;
+use App\Listeners\CalculateFinalTaskWeight;
 use App\Models\Task;
 use App\Observers\TaskObserver;
 use App\Models\Project;
@@ -28,7 +29,7 @@ class EventServiceProvider extends ServiceProvider
             CalculateFinalCategoryScore::class,
         ],
         UserEvaluationEnded::class => [
-            // Add listener if needed for user evaluation
+            CalculateFinalTaskWeight::class,
         ],
     ];
 

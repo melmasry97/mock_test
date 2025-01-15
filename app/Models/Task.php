@@ -15,7 +15,8 @@ class Task extends Model
         'description',
         'project_id',
         'project_module_id',
-        'type_id',
+        'source_group_id',
+        'source_id',
         'status',
         'rice_evaluation_end_time',
         'evaluation_end_time',
@@ -24,16 +25,20 @@ class Task extends Model
         'confidence',
         'effort',
         'rice_score',
+        'overall_evaluation_value',
+        'weight'
     ];
 
     protected $casts = [
         'rice_evaluation_end_time' => 'datetime',
         'evaluation_end_time' => 'datetime',
-        'reach' => 'integer',
-        'impact' => 'integer',
-        'confidence' => 'integer',
-        'effort' => 'integer',
+        'reach' => 'float',
+        'impact' => 'float',
+        'confidence' => 'float',
+        'effort' => 'float',
         'rice_score' => 'float',
+        'overall_evaluation_value' => 'float',
+        'weight' => 'float'
     ];
 
     public function project(): BelongsTo
