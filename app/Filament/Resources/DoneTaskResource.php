@@ -92,9 +92,17 @@ class DoneTaskResource extends Resource
                     ->numeric(2)
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('type.typeCategory.weight')
-                    ->label('Type Category Weight')
+                Tables\Columns\TextColumn::make('categories_avg_weight')
+                    ->label('Type Categories Weight')
                     ->numeric(2)
+                    ->getStateUsing(function (Task $record) {
+                        return $record->categories()
+                            ->join('project_type_category_evaluations', function($join) use ($record) {
+                                $join->on('type_categories.id', '=', 'project_type_category_evaluations.category_id')
+                                    ->where('project_type_category_evaluations.project_id', '=', $record->project_id);
+                            })
+                            ->avg('project_type_category_evaluations.weight') ?? 0;
+                    })
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('rice_score')

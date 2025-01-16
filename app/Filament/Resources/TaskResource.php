@@ -34,10 +34,16 @@ class TaskResource extends Resource
                 Forms\Components\Grid::make(2)
                     ->schema([
                         Forms\Components\Select::make('project_id')
-                            ->relationship('project', 'name')
+                            ->relationship('project', 'name', function ($query) {
+                                return $query->whereHas('types.categories', function ($q) {
+                                    $q->whereNotNull('weight');
+                                });
+                            })
                             ->required()
                             ->searchable()
                             ->preload()
+                            ->live()
+                            ->afterStateUpdated(fn (callable $set) => $set('type_id', null))
                             ->label('Project'),
 
                         Forms\Components\Select::make('project_module_id')
@@ -46,6 +52,42 @@ class TaskResource extends Resource
                             ->searchable()
                             ->preload()
                             ->label('Project Module'),
+                    ]),
+
+                Forms\Components\Grid::make(2)
+                    ->schema([
+                        Forms\Components\Select::make('type_id')
+                            ->relationship('type', 'name', function ($query, $get) {
+                                $projectId = $get('project_id');
+                                if ($projectId) {
+                                    return $query->whereHas('projects', function ($q) use ($projectId) {
+                                        $q->where('project_id', $projectId);
+                                    });
+                                }
+                                return $query->whereNull('types.id');
+                            })
+                            ->required()
+                            ->searchable()
+                            ->preload()
+                            ->live()
+                            ->disabled(fn ($get) => !$get('project_id'))
+                            ->afterStateUpdated(fn (callable $set) => $set('categories', []))
+                            ->label('Type'),
+
+                        Forms\Components\Select::make('categories')
+                            ->relationship('categories', 'name', function ($query, $get) {
+                                $typeId = $get('type_id');
+                                if ($typeId) {
+                                    return $query->where('type_id', $typeId);
+                                }
+                                return $query->whereNull('type_categories.id');
+                            })
+                            ->multiple()
+                            ->required()
+                            ->searchable()
+                            ->preload()
+                            ->disabled(fn ($get) => !$get('type_id'))
+                            ->label('Type Categories'),
                     ]),
 
                 Forms\Components\TextInput::make('name')

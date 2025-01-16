@@ -163,8 +163,13 @@ class Task extends Model
             // Get Fibonacci weight from user evaluations
             $fibonacciWeight = $this->overall_evaluation_value ?? 0;
 
-            // Get average category weight
-            $categoryWeight = $this->categories->avg('weight') ?? 0;
+            // Get average weight of selected type categories from evaluations
+            $categoryWeight = $this->categories()
+                ->join('project_type_category_evaluations', function($join) {
+                    $join->on('type_categories.id', '=', 'project_type_category_evaluations.category_id')
+                        ->where('project_type_category_evaluations.project_id', '=', $this->project_id);
+                })
+                ->avg('project_type_category_evaluations.weight') ?? 0;
 
             // Calculate final weight
             $this->weight = ($moduleWeight + $riceScore + $fibonacciWeight + $categoryWeight) / 4;
